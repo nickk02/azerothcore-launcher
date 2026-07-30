@@ -11,7 +11,8 @@ namespace Core
         _wdupenv_s(&appdata, &len, L"APPDATA");
         std::filesystem::path dir = std::filesystem::path(appdata ? appdata : L".") / L"AzerothCore";
         free(appdata);
-        std::filesystem::create_directories(dir);
+        std::error_code ec;
+        std::filesystem::create_directories(dir, ec);
         return dir;
     }
 
