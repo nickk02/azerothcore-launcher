@@ -1,0 +1,20 @@
+<Window
+    x:Class="AzerothCore.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AzerothCore">
+
+    <Grid x:Name="RootGrid" Background="#0A0A0A">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="#141414">
+            <TextBlock Text="AzerothCore" Foreground="#DCE4F2" FontSize="12"
+                       VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </Grid>
+
+        <Frame x:Name="ContentFrame" Grid.Row="1"/>
+    </Grid>
+</Window>
