@@ -11,7 +11,7 @@ namespace Core
         bool CredentialVaultEnabled = false;
 
         static RealmConfig Load();
-        void Save() const;
+        bool Save() const;
         static std::filesystem::path ConfigDir();
     };
 }
