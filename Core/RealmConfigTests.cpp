@@ -26,7 +26,7 @@ int main()
         cfg.WowPath = L"C:\\Games\\WoW\\Wow.exe";
         cfg.RealmAddress = L"logon.example.com:3724";
         cfg.CredentialVaultEnabled = true;
-        cfg.Save();
+        assert(cfg.Save() == true);
 
         Core::RealmConfig reloaded = Core::RealmConfig::Load();
         assert(reloaded.WowPath == L"C:\\Games\\WoW\\Wow.exe");

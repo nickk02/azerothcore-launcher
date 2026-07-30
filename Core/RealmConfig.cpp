@@ -41,12 +41,20 @@ namespace Core
         return cfg;
     }
 
-    void RealmConfig::Save() const
+    bool RealmConfig::Save() const
     {
         std::filesystem::path file = ConfigDir() / L"settings.ini";
         std::wofstream out(file, std::ios::trunc);
+        if (!out.is_open())
+            return false;
+
         out << L"WowPath=" << WowPath << L"\n";
         out << L"RealmAddress=" << RealmAddress << L"\n";
         out << L"CredentialVaultEnabled=" << (CredentialVaultEnabled ? L"1" : L"0") << L"\n";
+
+        if (out.fail())
+            return false;
+
+        return true;
     }
 }
