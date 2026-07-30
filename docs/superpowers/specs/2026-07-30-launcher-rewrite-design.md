@@ -2,9 +2,9 @@
 
 ## Context
 
-`nickk02/azerothcore-launcher` is currently a GitHub fork of `wallski/wallmane` with a renamed/rebranded codebase (namespace, config paths, configurable realm address). Nick wants both the GitHub fork relationship and the underlying implementation gone — a genuinely independent project, not a relabeled derivative. The old code is preserved locally at `wallmane-reference/` for reference and is not reused; nothing in the rewrite is copied or adapted from it.
+`nickk02/azerothcore-launcher` was previously a GitHub fork of `wallski/wallmane` with a renamed/rebranded codebase (namespace, config paths, configurable realm address). That wasn't enough: Nick wanted both the GitHub fork relationship and the underlying implementation gone — a genuinely independent project, not a relabeled derivative. The old code is preserved locally at `wallmane-reference/` for reference and is not reused; nothing in this rewrite is copied or adapted from it.
 
-The old fork will be deleted on GitHub (Nick's own action, not automatable here — deleting a repo is outside what this agent will do regardless of authorization). A fresh, non-fork repo replaces it under the same name.
+This is now done. Nick deleted the old fork on GitHub himself (repo deletion is outside what this agent does regardless of authorization). A fresh, non-fork repo now exists under the same name (`fork: false, parent: null` on GitHub; two commits total across all branches, none touching the old wallmane code) and is what this spec and everything downstream of it targets.
 
 ## Decisions locked in this pass
 
