@@ -16,5 +16,9 @@
 /dist/
 /packages/
 
+# Loose object files and test executables from ad-hoc compilation
+*.obj
+*_test.exe
+
 # Internal task-execution progress tracking, not part of the shipped app.
 .superpowers/
