@@ -1,0 +1,17 @@
+# Blizzard-owned assets: local use only, never redistributed.
+/Assets/wotlk-hero.png
+/Assets/wotlk-icon.png
+/Assets/wotlk-logo.png
+/Launcher.exe
+/wow-launcher.PNG
+
+# Local design scratch, not part of the shipped app.
+/_mockup-preview.html
+
+# Build output
+/bin/
+/obj/
+/x64/
+/Generated Files/
+/dist/
+/packages/
