@@ -94,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Core\RealmConfig.cpp" />
+    <ClCompile Include="Core\WowInstall.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Pages\HomePage.cpp">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClCompile>
@@ -116,6 +119,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Core\RealmConfig.h" />
+    <ClInclude Include="Core\WowInstall.h" />
     <ClInclude Include="Pages\HomePage.h">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClInclude>
