@@ -5,7 +5,10 @@ namespace winrt::AzerothCore::Pages::implementation
 {
     struct HomePage : HomePageT<HomePage>
     {
-        HomePage() { InitializeComponent(); }
+        HomePage();
+
+        winrt::fire_and_forget CheckRealmStatusAsync();
+        void PlayButton_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
     };
 }
 
