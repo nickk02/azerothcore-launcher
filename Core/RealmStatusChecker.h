@@ -11,6 +11,12 @@ namespace Core
     struct RealmStatusChecker
     {
         static std::pair<std::wstring, uint32_t> ParseAddress(std::wstring const& address);
+
+        // Returns an int32_t rather than RealmReachability directly: C++/WinRT's
+        // IAsyncOperation<T> requires an explicit winrt::impl::category<T>
+        // specialization, which the generated project headers don't provide for
+        // plain enums (confirmed via a real build: "TResult must be WinRT type").
+        // Callers must static_cast<RealmReachability>(...) the result.
         static winrt::Windows::Foundation::IAsyncOperation<int32_t> CheckAsync(std::wstring address);
     };
 }
