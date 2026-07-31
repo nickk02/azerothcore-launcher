@@ -26,11 +26,32 @@ namespace Core
             std::filesystem::create_directories(realmlist.parent_path());
             std::wofstream out(realmlist, std::ios::trunc);
             out << L"set realmlist " << realmAddress << L"\n";
+
+            // Also write to locale-specific realmlist files if they exist
+            std::filesystem::path dataDir = dir / L"Data";
+            if (std::filesystem::exists(dataDir) && std::filesystem::is_directory(dataDir))
+            {
+                try
+                {
+                    for (auto const& entry : std::filesystem::directory_iterator(dataDir))
+                    {
+                        if (entry.is_directory())
+                        {
+                            std::filesystem::path localeRealmlist = entry.path() / L"realmlist.wtf";
+                            std::wofstream localeOut(localeRealmlist, std::ios::trunc);
+                            localeOut << L"set realmlist " << realmAddress << L"\n";
+                        }
+                    }
+                }
+                catch (...)
+                {
+                    // Silently ignore errors iterating Data directory
+                }
+            }
         }
 
         SHELLEXECUTEINFOW sei{};
         sei.cbSize = sizeof(sei);
-        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
         sei.lpFile = exe.c_str();
         sei.lpDirectory = dir.c_str();
         sei.nShow = SW_SHOWNORMAL;
