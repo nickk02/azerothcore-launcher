@@ -5,7 +5,8 @@ namespace winrt::AzerothCore::Pages::implementation
 {
     struct CharactersPage : CharactersPageT<CharactersPage>
     {
-        CharactersPage() { InitializeComponent(); }
+        CharactersPage();
+        winrt::fire_and_forget LoadCharactersAsync();
     };
 }
 
