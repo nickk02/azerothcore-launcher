@@ -51,7 +51,7 @@ namespace winrt::AzerothCore::Pages::implementation
                 for (auto const& addon : results)
                 {
                     TextBlock item;
-                    item.Text(addon.Name + L"  —  " + addon.SourceName);
+                    item.Text(addon.Name + L"  -  " + addon.SourceName);
                     item.Foreground(Media::SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(0xFF, 0xDC, 0xE4, 0xF2)));
                     item.Margin({ 0, 4, 0, 4 });
                     ResultsList().Items().Append(item);
