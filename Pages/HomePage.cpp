@@ -6,6 +6,7 @@
 #include "../Core/RealmConfig.h"
 #include "../Core/RealmStatusChecker.h"
 #include "../Core/WowInstall.h"
+#include "../Core/CredentialVault.h"
 
 using namespace winrt;
 using namespace Microsoft::UI::Xaml;
@@ -66,8 +67,10 @@ namespace winrt::AzerothCore::Pages::implementation
     {
         auto cfg = Core::RealmConfig::Load();
         if (cfg.WowPath.empty())
-            return; // SettingsPage (Task 9) is where the user sets this; nothing to launch yet.
+            return;
 
-        Core::WowInstall::LaunchWow(cfg.WowPath, cfg.RealmAddress);
+        bool launched = Core::WowInstall::LaunchWow(cfg.WowPath, cfg.RealmAddress);
+        if (launched && cfg.CredentialVaultEnabled)
+            Core::CredentialVault::AutofillLoginAsync();
     }
 }
