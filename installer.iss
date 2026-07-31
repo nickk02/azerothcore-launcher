@@ -1,5 +1,7 @@
 #define MyAppName "AzerothCore"
-#define MyAppVersion "1.0.0"
+; Build-date-derived version, so every real build's installer carries its
+; own distinct, meaningful version with no manual bump required.
+#define MyAppVersion GetDateTimeString('yyyy.mm.dd', '', '')
 #define MyAppPublisher "AzerothCore"
 #define MyAppExeName "azerothcore.exe"
 
