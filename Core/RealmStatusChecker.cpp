@@ -1,6 +1,8 @@
 #include "RealmStatusChecker.h"
 #include <winrt/Windows.Networking.h>
 #include <winrt/Windows.Networking.Sockets.h>
+#include <thread>
+#include <chrono>
 
 using namespace winrt;
 using namespace winrt::Windows::Networking;
@@ -33,7 +35,16 @@ namespace Core
         {
             StreamSocket socket;
             HostName hostName{ host };
-            co_await socket.ConnectAsync(hostName, winrt::hstring(std::to_wstring(port)));
+            auto connectOp = socket.ConnectAsync(hostName, winrt::hstring(std::to_wstring(port)));
+
+            std::thread([connectOp]() mutable
+                {
+                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    if (connectOp.Status() == winrt::Windows::Foundation::AsyncStatus::Started)
+                        connectOp.Cancel();
+                }).detach();
+
+            co_await connectOp;
             result = static_cast<int32_t>(RealmReachability::Online);
             socket.Close();
         }
