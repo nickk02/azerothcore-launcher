@@ -24,12 +24,11 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center"
                     Padding="18,0" Spacing="10">
-            <Button x:Name="OptionsButton" Content="Options"/>
-            <Button x:Name="AddonsButton" Content="Addons"/>
             <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
                     HorizontalAlignment="Right" Padding="30,8"/>
-            <TextBlock x:Name="PlaytimeLabel" Text="" Foreground="#88DCE4F2"
-                       FontSize="10" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
+                       FontSize="10" VerticalAlignment="Center" Margin="12,0,0,0"
+                       Visibility="Collapsed"/>
         </StackPanel>
     </Grid>
 </Page>

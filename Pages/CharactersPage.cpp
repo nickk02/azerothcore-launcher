@@ -17,12 +17,21 @@ namespace winrt::AzerothCore::Pages::implementation
         LoadCharactersAsync();
     }
 
+    // See the DispatcherQueue()-hoisting note on AddonsPage::RunSearchAsync
+    // (Pages/AddonsPage.cpp) for why `queue` is captured before the
+    // co_await rather than calling DispatcherQueue() after it: Core::Task<T>
+    // does not preserve the calling thread, so DispatcherQueue() -- itself a
+    // thread-affine property -- must be read while still on the UI thread.
+    // ArmoryClient::FetchCharactersAsync happens not to suspend today, so
+    // this stays on the UI thread either way, but that stops being true the
+    // moment a real backend replaces it.
     winrt::fire_and_forget CharactersPage::LoadCharactersAsync()
     {
         auto lifetime = get_strong();
+        auto queue = DispatcherQueue();
         auto characters = co_await Core::ArmoryClient::FetchCharactersAsync(L"");
 
-        DispatcherQueue().TryEnqueue([this, lifetime, characters]()
+        queue.TryEnqueue([this, lifetime, characters]()
             {
                 if (characters.empty())
                 {

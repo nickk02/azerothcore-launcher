@@ -40,21 +40,41 @@ namespace winrt::AzerothCore::Pages::implementation
         winrt::Windows::System::Launcher::LaunchFolderPathAsync(winrt::hstring(addonsDir.wstring()));
     }
 
+    // Pattern to copy for any future Core::Task<T>-returning call from a UI
+    // event handler: Task<T> does NOT preserve the calling thread/apartment
+    // (see Core/Async.h) -- it may resume on whatever thread the coroutine
+    // body finishes on. m_catalog.SearchAsync hops onto a background thread
+    // (FelbiteSource::SearchAsync calls resume_background()), so
+    // DispatcherQueue() -- itself a property of this thread-affine
+    // DependencyObject -- MUST be captured here, before the co_await, while
+    // still on the UI thread. Calling DispatcherQueue() AFTER the co_await
+    // would be reading a thread-affine property from a background thread.
     winrt::fire_and_forget AddonsPage::RunSearchAsync(std::wstring query)
     {
         auto lifetime = get_strong();
-        auto results = co_await m_catalog.SearchAsync(query);
+        auto queue = DispatcherQueue();
+        auto result = co_await m_catalog.SearchAsync(query);
 
-        DispatcherQueue().TryEnqueue([this, lifetime, results]()
+        queue.TryEnqueue([this, lifetime, result]()
             {
                 ResultsList().Items().Clear();
-                for (auto const& addon : results)
+                for (auto const& addon : result.Addons)
                 {
                     TextBlock item;
                     item.Text(addon.Name + L"  -  " + addon.SourceName);
                     item.Foreground(Media::SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(0xFF, 0xDC, 0xE4, 0xF2)));
                     item.Margin({ 0, 4, 0, 4 });
                     ResultsList().Items().Append(item);
+                }
+
+                if (result.AnySourceFailed && result.Addons.empty())
+                {
+                    StatusTextBlock().Text(L"Addon search unavailable");
+                    StatusTextBlock().Visibility(Visibility::Visible);
+                }
+                else
+                {
+                    StatusTextBlock().Visibility(Visibility::Collapsed);
                 }
             });
     }
