@@ -16,6 +16,7 @@
     <ClCompile Include="Core\CredentialVault.cpp"><Filter>Core</Filter></ClCompile>
     <ClCompile Include="Core\FelbiteSource.cpp"><Filter>Core</Filter></ClCompile>
     <ClCompile Include="Core\AddonCatalog.cpp"><Filter>Core</Filter></ClCompile>
+    <ClCompile Include="Core\ArmoryClient.cpp"><Filter>Core</Filter></ClCompile>
     <ClCompile Include="Pages\HomePage.cpp"><Filter>Pages</Filter></ClCompile>
     <ClCompile Include="Pages\AddonsPage.cpp"><Filter>Pages</Filter></ClCompile>
     <ClCompile Include="Pages\CharactersPage.cpp"><Filter>Pages</Filter></ClCompile>
@@ -33,6 +34,7 @@
     <ClInclude Include="Core\IAddonSource.h"><Filter>Core</Filter></ClInclude>
     <ClInclude Include="Core\FelbiteSource.h"><Filter>Core</Filter></ClInclude>
     <ClInclude Include="Core\AddonCatalog.h"><Filter>Core</Filter></ClInclude>
+    <ClInclude Include="Core\ArmoryClient.h"><Filter>Core</Filter></ClInclude>
     <ClInclude Include="Pages\HomePage.h"><Filter>Pages</Filter></ClInclude>
     <ClInclude Include="Pages\AddonsPage.h"><Filter>Pages</Filter></ClInclude>
     <ClInclude Include="Pages\CharactersPage.h"><Filter>Pages</Filter></ClInclude>
