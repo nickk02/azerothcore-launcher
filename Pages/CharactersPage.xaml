@@ -2,5 +2,9 @@
     x:Class="AzerothCore.Pages.CharactersPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="#0A0A0A"/>
+    <Grid Background="#0A0A0A">
+        <TextBlock x:Name="EmptyStateText" Text="No character data available for this realm yet."
+                   Foreground="#88DCE4F2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ItemsControl x:Name="CharacterList" Visibility="Collapsed"/>
+    </Grid>
 </Page>
