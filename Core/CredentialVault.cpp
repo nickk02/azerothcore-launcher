@@ -47,11 +47,11 @@ namespace Core
         catch (...) {} // FindAllByResource throws if nothing is stored yet -- not an error.
     }
 
-    winrt::fire_and_forget CredentialVault::AutofillLoginAsync()
+    Task<bool> CredentialVault::AutofillLoginAsync()
     {
         auto cred = TryGet();
         if (!cred)
-            co_return;
+            co_return false;
 
         // Give the WoW client's login screen time to draw and take focus
         // before simulating keystrokes into whatever window is foreground.
@@ -78,5 +78,7 @@ namespace Core
         tab[1] = tab[0]; tab[1].ki.dwFlags = KEYEVENTF_KEYUP;
         SendInput(2, tab, sizeof(INPUT));
         sendText(cred->Password);
+
+        co_return true;
     }
 }

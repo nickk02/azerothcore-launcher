@@ -143,32 +143,27 @@ namespace Core
     {
         co_await winrt::resume_background();
 
-        std::vector<RemoteAddon> results;
-        try
-        {
-            // Plain, minimal encoding for a search term: felbite's own
-            // search form submits spaces as "+", which is what a normal GET
-            // form submission of this page produces.
-            std::wstring encoded;
-            encoded.reserve(query.size());
-            for (wchar_t c : query)
-                encoded += (c == L' ') ? L'+' : c;
+        // Network failure, DNS error, HTTP error status, malformed response,
+        // etc. are deliberately NOT caught here -- they propagate to the
+        // caller. AddonCatalog::SearchAsync is the layer that fans this call
+        // out across multiple sources and catches per-source, both to keep
+        // one unreachable source from taking the others down AND to record
+        // that this source failed (AddonSearchResult::AnySourceFailed) so
+        // AddonsPage can show a real "addon search unavailable" state instead
+        // of an empty-looking "no addons found" list.
 
-            std::wstring url = L"https://felbite.com/?s=" + encoded + L"&post_type=addon";
-            HttpClient client;
-            winrt::hstring html = co_await client.GetStringAsync(winrt::Windows::Foundation::Uri(url));
-            results = ParseSearchResults(html.c_str());
-        }
-        catch (...)
-        {
-            // Network failure, DNS error, HTTP error status, malformed
-            // response, etc. -- degrade to an empty result set instead of
-            // propagating an exception. AddonCatalog fans this call out
-            // across multiple sources; one unreachable source must not take
-            // the others down with it.
-            results.clear();
-        }
+        // Plain, minimal encoding for a search term: felbite's own search
+        // form submits spaces as "+", which is what a normal GET form
+        // submission of this page produces.
+        std::wstring encoded;
+        encoded.reserve(query.size());
+        for (wchar_t c : query)
+            encoded += (c == L' ') ? L'+' : c;
 
-        co_return results;
+        std::wstring url = L"https://felbite.com/?s=" + encoded + L"&post_type=addon";
+        HttpClient client;
+        winrt::hstring html = co_await client.GetStringAsync(winrt::Windows::Foundation::Uri(url));
+
+        co_return ParseSearchResults(html.c_str());
     }
 }

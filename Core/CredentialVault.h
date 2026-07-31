@@ -2,6 +2,7 @@
 #include <string>
 #include <optional>
 #include <winrt/base.h>
+#include "Async.h"
 
 namespace Core
 {
@@ -12,6 +13,13 @@ namespace Core
         static void Store(std::wstring const& accountName, std::wstring const& password);
         static std::optional<StoredCredential> TryGet();
         static void Clear();
-        static winrt::fire_and_forget AutofillLoginAsync();
+
+        // Returns false (without simulating any keystrokes) when there's no
+        // stored credential or the vault access failed -- reuses TryGet()'s
+        // existing failure path rather than duplicating it. Callers use this
+        // to show an explicit "not signed in" state instead of silently
+        // proceeding as if autofill worked (see the design spec's Error
+        // handling section).
+        static Task<bool> AutofillLoginAsync();
     };
 }

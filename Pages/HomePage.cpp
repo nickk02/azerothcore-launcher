@@ -16,14 +16,6 @@ namespace winrt::AzerothCore::Pages::implementation
     HomePage::HomePage()
     {
         InitializeComponent();
-
-        auto cfg = Core::RealmConfig::Load();
-        if (!cfg.WowPath.empty())
-        {
-            uint64_t seconds = Core::WowInstall::GetTotalPlaytimeSeconds(cfg.WowPath);
-            PlaytimeLabel().Text(Core::WowInstall::FormatPlaytime(seconds));
-        }
-
         CheckRealmStatusAsync();
     }
 
@@ -63,14 +55,51 @@ namespace winrt::AzerothCore::Pages::implementation
             });
     }
 
-    void HomePage::PlayButton_Click(IInspectable const&, RoutedEventArgs const&)
+    // fire_and_forget rather than void: this now has a real co_await (the
+    // credential-autofill result) in the Play flow, the first one in this
+    // file. Everything up to and including LaunchWow() runs synchronously,
+    // before any suspension point, so it's still safe to touch StatusTextBlock
+    // directly there; `queue` is still captured up front, before the
+    // co_await, per the DispatcherQueue()-hoisting pattern in
+    // Pages/AddonsPage.cpp's RunSearchAsync -- CredentialVault::AutofillLoginAsync
+    // is a Core::Task<T>, which does not preserve the calling thread (see
+    // Core/Async.h), and it genuinely does hop off the UI thread today via
+    // winrt::resume_after().
+    winrt::fire_and_forget HomePage::PlayButton_Click(IInspectable const&, RoutedEventArgs const&)
     {
+        auto lifetime = get_strong();
+        auto queue = DispatcherQueue();
+
         auto cfg = Core::RealmConfig::Load();
         if (cfg.WowPath.empty())
-            return;
+        {
+            StatusTextBlock().Text(L"No WoW install path configured - check Settings");
+            StatusTextBlock().Visibility(Visibility::Visible);
+            co_return;
+        }
 
         bool launched = Core::WowInstall::LaunchWow(cfg.WowPath, cfg.RealmAddress);
-        if (launched && cfg.CredentialVaultEnabled)
-            Core::CredentialVault::AutofillLoginAsync();
+        if (!launched)
+        {
+            StatusTextBlock().Text(L"Failed to launch WoW - check your install path in Settings");
+            StatusTextBlock().Visibility(Visibility::Visible);
+            co_return;
+        }
+
+        StatusTextBlock().Visibility(Visibility::Collapsed);
+
+        if (cfg.CredentialVaultEnabled)
+        {
+            bool signedIn = co_await Core::CredentialVault::AutofillLoginAsync();
+
+            queue.TryEnqueue([this, lifetime, signedIn]()
+                {
+                    if (!signedIn)
+                    {
+                        StatusTextBlock().Text(L"Not signed in - credentials not saved");
+                        StatusTextBlock().Visibility(Visibility::Visible);
+                    }
+                });
+        }
     }
 }
