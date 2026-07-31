@@ -94,7 +94,7 @@ namespace winrt::AzerothCore::Pages::implementation
         bool rememberMe = RememberMeCheckBox().IsChecked().GetBoolean();
 
         bool configSaveFailed = false;
-        if (rememberMe && !password.empty())
+        if (rememberMe && !accountName.empty() && !password.empty())
         {
             Core::CredentialVault::Store(accountName, password);
             cfg.CredentialVaultEnabled = true;
