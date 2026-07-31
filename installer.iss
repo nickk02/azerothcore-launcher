@@ -14,12 +14,12 @@ VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoProductName={#MyAppName}
 VersionInfoDescription={#MyAppName} Setup
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={%USERPROFILE}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 SetupIconFile=Assets\wotlk-icon.ico
-UninstallDisplayIcon={app}\{#MyAppExeName}
+UninstallDisplayIcon={app}\App\{#MyAppExeName}
 OutputDir=dist
 OutputBaseFilename=AzerothCoreSetup
 Compression=lzma2
@@ -44,7 +44,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 ; that would silently go stale or omit a required runtime DLL/locale folder,
 ; copy the whole output tree and exclude only the dev-only build byproducts
 ; (debug symbols and the import lib/exports from linking the .exe).
-Source: "x64\Release\azerothcore\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.lib,*.exp"
+Source: "x64\Release\azerothcore\*"; DestDir: "{app}\App"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.lib,*.exp"
 
 [Dirs]
 ; Empty client folder for the user's own, legally-obtained WotLK 3.3.5a install.
@@ -52,12 +52,12 @@ Source: "x64\Release\azerothcore\*"; DestDir: "{app}"; Flags: ignoreversion recu
 Name: "{app}\Client"
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\App\{#MyAppExeName}"
 Name: "{group}\Client Folder"; Filename: "{app}\Client"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\App\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\App\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 const
