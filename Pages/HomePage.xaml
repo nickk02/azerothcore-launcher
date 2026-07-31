@@ -9,8 +9,8 @@
             <RowDefinition Height="70"/>
         </Grid.RowDefinitions>
 
-        <Image Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
-               HorizontalAlignment="Left" Width="1400"/>
+        <Image Grid.RowSpan="2" Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
+               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
         <Image Grid.Row="0" Source="/Assets/wotlk-logo.png" Height="168"
                VerticalAlignment="Top" Margin="0,16,0,0"/>
