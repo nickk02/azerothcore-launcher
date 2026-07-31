@@ -4,24 +4,41 @@
     <Filter Include="Source Files"><UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier></Filter>
     <Filter Include="Header Files"><UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier></Filter>
     <Filter Include="Core"><UniqueIdentifier>{a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d}</UniqueIdentifier></Filter>
+    <Filter Include="Pages"><UniqueIdentifier>{b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e}</UniqueIdentifier></Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="App.xaml.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="MainWindow.xaml.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="Core\RealmConfig.cpp"><Filter>Core</Filter></ClCompile>
+    <ClCompile Include="Pages\HomePage.cpp"><Filter>Pages</Filter></ClCompile>
+    <ClCompile Include="Pages\AddonsPage.cpp"><Filter>Pages</Filter></ClCompile>
+    <ClCompile Include="Pages\CharactersPage.cpp"><Filter>Pages</Filter></ClCompile>
+    <ClCompile Include="Pages\SettingsPage.cpp"><Filter>Pages</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="App.xaml.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="MainWindow.xaml.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="Core\RealmConfig.h"><Filter>Core</Filter></ClInclude>
+    <ClInclude Include="Pages\HomePage.h"><Filter>Pages</Filter></ClInclude>
+    <ClInclude Include="Pages\AddonsPage.h"><Filter>Pages</Filter></ClInclude>
+    <ClInclude Include="Pages\CharactersPage.h"><Filter>Pages</Filter></ClInclude>
+    <ClInclude Include="Pages\SettingsPage.h"><Filter>Pages</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
     <Page Include="MainWindow.xaml" />
+    <Page Include="Pages\HomePage.xaml"><Filter>Pages</Filter></Page>
+    <Page Include="Pages\AddonsPage.xaml"><Filter>Pages</Filter></Page>
+    <Page Include="Pages\CharactersPage.xaml"><Filter>Pages</Filter></Page>
+    <Page Include="Pages\SettingsPage.xaml"><Filter>Pages</Filter></Page>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="MainWindow.idl" />
+    <Midl Include="Pages\HomePage.idl"><Filter>Pages</Filter></Midl>
+    <Midl Include="Pages\AddonsPage.idl"><Filter>Pages</Filter></Midl>
+    <Midl Include="Pages\CharactersPage.idl"><Filter>Pages</Filter></Midl>
+    <Midl Include="Pages\SettingsPage.idl"><Filter>Pages</Filter></Midl>
   </ItemGroup>
 </Project>

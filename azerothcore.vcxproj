@@ -4,6 +4,12 @@
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
+    <!-- Keep cppwinrt.exe's generated filenames directory-mirrored (Pages\HomePage.g.h)
+         instead of dot-flattened (Pages.HomePage.g.h, the -prefix default). The XAML
+         markup compiler always mirrors source directories for its own .xaml.g.h output,
+         and the two must agree for the __has_include-based pairing in the .g.h files
+         to find each other once pages live in a subfolder. -->
+    <CppWinRTUsePrefixes>false</CppWinRTUsePrefixes>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{7c3f0a5e-2b9a-4d61-9a0f-1e6b4b8c9a10}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -88,6 +94,18 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Core\RealmConfig.cpp" />
+    <ClCompile Include="Pages\HomePage.cpp">
+      <DependentUpon>Pages\HomePage.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Pages\AddonsPage.cpp">
+      <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Pages\CharactersPage.cpp">
+      <DependentUpon>Pages\CharactersPage.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Pages\SettingsPage.cpp">
+      <DependentUpon>Pages\SettingsPage.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -98,11 +116,31 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Core\RealmConfig.h" />
+    <ClInclude Include="Pages\HomePage.h">
+      <DependentUpon>Pages\HomePage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Pages\AddonsPage.h">
+      <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Pages\CharactersPage.h">
+      <DependentUpon>Pages\CharactersPage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Pages\SettingsPage.h">
+      <DependentUpon>Pages\SettingsPage.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
     <Page Include="MainWindow.xaml" />
     <Midl Include="MainWindow.idl" />
+    <Page Include="Pages\HomePage.xaml" />
+    <Midl Include="Pages\HomePage.idl" />
+    <Page Include="Pages\AddonsPage.xaml" />
+    <Midl Include="Pages\AddonsPage.idl" />
+    <Page Include="Pages\CharactersPage.xaml" />
+    <Midl Include="Pages\CharactersPage.idl" />
+    <Page Include="Pages\SettingsPage.xaml" />
+    <Midl Include="Pages\SettingsPage.idl" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
