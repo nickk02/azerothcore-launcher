@@ -56,6 +56,120 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+const
+  // The x64 VC++ 2015-2022 runtime records itself in the true 64-bit
+  // registry hive at this path (no "WOW6432Node" segment). "X86" is the
+  // sibling key the 32-bit redist writes; we only care about X64 here.
+  VCRedistRegPath = 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64';
+  // Defensive fallback location, checked in case some install ever mirrors
+  // the key under WOW6432Node; see IsVCRedistX64Installed for why this is
+  // secondary, not primary.
+  VCRedistRegPathWow6432 = 'SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\X64';
+  VCRedistDownloadUrl = 'https://aka.ms/vs/17/release/vc_redist.x64.exe';
+  VCRedistFileName = 'vc_redist.x64.exe';
+
+var
+  DownloadPage: TDownloadWizardPage;
+  VCRedistInstallRequired: Boolean;
+  VCRedistFailed: Boolean;
+
+// Detects the Microsoft Visual C++ 2015-2022 Redistributable (x64).
+//
+// Inno Setup's own setup.exe is compiled 32-bit by default. A 32-bit process
+// reading HKLM\SOFTWARE\Microsoft\... gets transparently redirected by
+// WOW64 to HKLM\SOFTWARE\WOW6432Node\Microsoft\..., which is where the
+// *x86* redistributable's key lives, not the x64 one. Reading the native
+// path via plain HKLM here is the classic false-negative trap: the key
+// legitimately exists on the machine, but the redirected read never sees
+// it. HKLM64 forces Inno Setup to use the real 64-bit registry view
+// (bypasses WOW64 redirection), which is where the x64 redistributable
+// actually installs to, so that's the primary check.
+function IsVCRedistX64Installed(): Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := False;
+
+  if RegQueryDWordValue(HKLM64, VCRedistRegPath, 'Installed', Installed) then
+  begin
+    Result := Installed = 1;
+    Exit;
+  end;
+
+  // Fallback only: not the expected location for the x64 key, but checked
+  // so an unusual layout doesn't cause an unnecessary download/install.
+  if RegQueryDWordValue(HKLM, VCRedistRegPathWow6432, 'Installed', Installed) then
+  begin
+    Result := Installed = 1;
+    Exit;
+  end;
+end;
+
+procedure InitializeWizard;
+begin
+  VCRedistInstallRequired := not IsVCRedistX64Installed();
+  if VCRedistInstallRequired then
+    DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing),
+      'AzerothCore needs the Microsoft Visual C++ Redistributable (x64) to run. Downloading it now...',
+      nil);
+end;
+
+// Downloads vc_redist.x64.exe to {tmp} while the wizard is on the "Ready to
+// Install" page, using Inno Setup's built-in download page so the user sees
+// real progress instead of a frozen window. A failed/aborted download does
+// not stop the installer -- VCRedistFailed is recorded and surfaced once,
+// after the app files are in place, in CurStepChanged below.
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (CurPageID = wpReady) and VCRedistInstallRequired and (not VCRedistFailed) then
+  begin
+    DownloadPage.Clear;
+    DownloadPage.Add(VCRedistDownloadUrl, VCRedistFileName, '');
+    DownloadPage.Show;
+    try
+      try
+        DownloadPage.Download;
+      except
+        VCRedistFailed := True;
+        if DownloadPage.AbortedByUser then
+          Log('VC++ Redistributable download aborted by user.')
+        else
+          Log('VC++ Redistributable download failed: ' + GetExceptionMessage);
+      end;
+    finally
+      DownloadPage.Hide;
+    end;
+  end;
+end;
+
+// Runs the downloaded redistributable installer silently, right before the
+// app's own files are copied. Exit codes 0 (success), 3010 (success, reboot
+// wanted -- suppressed by /norestart) and 1638 (a newer runtime is already
+// present) all count as success.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+  Ran: Boolean;
+begin
+  Result := '';
+  if VCRedistInstallRequired and (not VCRedistFailed) then
+  begin
+    Ran := Exec(ExpandConstant('{tmp}\' + VCRedistFileName), '/install /quiet /norestart', '',
+      SW_SHOW, ewWaitUntilTerminated, ResultCode);
+    if (not Ran) then
+    begin
+      VCRedistFailed := True;
+      Log('Failed to launch VC++ Redistributable installer.');
+    end
+    else if (ResultCode <> 0) and (ResultCode <> 3010) and (ResultCode <> 1638) then
+    begin
+      VCRedistFailed := True;
+      Log('VC++ Redistributable installer exited with code ' + IntToStr(ResultCode));
+    end;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ReadmePath: string;
@@ -72,5 +186,12 @@ begin
     Lines[4] := 'use Settings to browse to Wow.exe here.';
     Lines[5] := '';
     SaveStringsToFile(ReadmePath, Lines, False);
+
+    if VCRedistInstallRequired and VCRedistFailed then
+      SuppressibleMsgBox(
+        'AzerothCore could not automatically install the Microsoft Visual C++ Redistributable (x64), which the app needs in order to run.' + #13#10 + #13#10 +
+        'Please install it manually before launching AzerothCore, from:' + #13#10 +
+        VCRedistDownloadUrl,
+        mbInformation, MB_OK, IDOK);
   end;
 end;
