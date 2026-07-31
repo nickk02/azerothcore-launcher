@@ -1830,7 +1830,7 @@ gh pr create --title "Wire credential autofill + Settings page" --body "End-to-e
 ### Task 9: IAddonSource + FelbiteSource
 
 **Files:**
-- Create: `Core/IAddonSource.h`, `Core/FelbiteSource.h`, `Core/FelbiteSource.cpp`, `Core/FelbiteSourceTests.cpp`
+- Create: `Core/Async.h`, `Core/IAddonSource.h`, `Core/FelbiteSource.h`, `Core/FelbiteSource.cpp`, `Core/FelbiteSourceTests.cpp`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -1844,12 +1844,35 @@ gh pr create --title "Wire credential autofill + Settings page" --body "End-to-e
       struct IAddonSource {
           virtual ~IAddonSource() = default;
           virtual std::wstring GetName() const = 0;
-          virtual winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> SearchAsync(std::wstring query) = 0;
+          virtual Task<std::vector<RemoteAddon>> SearchAsync(std::wstring query) = 0;
       };
       struct FelbiteSource : IAddonSource { /* ... */ };
   }
   ```
-  Task 11 (`AddonCatalog`) holds a `std::vector<std::unique_ptr<IAddonSource>>` and calls `SearchAsync` on each; Task 10's health check calls `FelbiteSource::SearchAsync` directly against a known query.
+  **Correction (post-Task-9, verified against a real build):** the interface below uses
+  `Core::Task<T>` (defined in the new `Core/Async.h`), not
+  `winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>>`. cppwinrt requires a
+  result type to have a registered ABI category to cross the COM vtable (`static_assert(...,
+  "TResult must be WinRT type.")`), and `std::vector<T>` has zero category specializations in the
+  Windows SDK's cppwinrt headers for *any* `T` -- confirmed by grepping
+  `winrt/base.h`/`winrt/impl/*` for `category<std::vector` (zero hits). This isn't specific to
+  `RemoteAddon`; `IAsyncOperation<std::vector<int>>` fails the same static_assert. `Core::Task<T>`
+  is a small hand-rolled C++20 coroutine type (eager start, single continuation, verified with a
+  real cross-thread resumption + nested-await + exception-propagation harness before adoption)
+  that sidesteps the ABI requirement entirely while remaining fully `co_await`-able from any other
+  coroutine, WinRT-flavored or not. Task 11 (`AddonCatalog`) holds a
+  `std::vector<std::unique_ptr<IAddonSource>>` and calls `SearchAsync` on each; Task 10's health
+  check calls `FelbiteSource::SearchAsync` directly against a known query. Both should use
+  `Core::Task<std::vector<RemoteAddon>>` throughout, matching what's actually implemented on
+  `core/felbite-source`, not the original (uncompilable) `IAsyncOperation` signature.
+  Separately: `FelbiteSource.cpp` needs an explicit `#include <winrt/Windows.Foundation.h>`
+  alongside `<winrt/Windows.Web.Http.h>` -- the latter alone declares `HttpClient` but does not
+  pull in the `operator co_await` overloads for WinRT async types, which live in
+  `Windows.Foundation.h` (confirmed via a real build failure without it:
+  `'await_resume': is not a member of IAsyncOperationWithProgress<...>`). `RealmStatusChecker.cpp`
+  never hit this because `RealmStatusChecker.h` already includes `Windows.Foundation.h` directly
+  for its own `IAsyncOperation<int32_t>` return type; `FelbiteSource.h` has no such transitive
+  include since it returns `Core::Task<T>` instead.
 
 - [ ] **Step 1: Write the failing test for the HTML-parsing logic, isolated from the network**
 
@@ -1897,7 +1920,7 @@ int main()
 #pragma once
 #include <string>
 #include <vector>
-#include <winrt/Windows.Foundation.h>
+#include "Async.h"
 
 namespace Core
 {
@@ -1911,7 +1934,7 @@ namespace Core
     {
         virtual ~IAddonSource() = default;
         virtual std::wstring GetName() const = 0;
-        virtual winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> SearchAsync(std::wstring query) = 0;
+        virtual Task<std::vector<RemoteAddon>> SearchAsync(std::wstring query) = 0;
     };
 }
 ```
@@ -1926,7 +1949,7 @@ namespace Core
     struct FelbiteSource : IAddonSource
     {
         std::wstring GetName() const override { return L"Felbite"; }
-        winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> SearchAsync(std::wstring query) override;
+        Task<std::vector<RemoteAddon>> SearchAsync(std::wstring query) override;
         static std::vector<RemoteAddon> ParseSearchResults(std::wstring const& html);
     };
 }
@@ -1940,9 +1963,18 @@ namespace Core
 namespace Core
 {
     std::vector<RemoteAddon> FelbiteSource::ParseSearchResults(std::wstring const&) { throw std::runtime_error("not implemented"); }
-    winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> FelbiteSource::SearchAsync(std::wstring) { co_return {}; }
+    Task<std::vector<RemoteAddon>> FelbiteSource::SearchAsync(std::wstring) { co_return {}; }
 }
 ```
+
+**Note on the `<div class="addon-card">` fixture/regex below:** it was never verified against the
+live site and does not match felbite.com's real search-result markup (confirmed by fetching
+`https://felbite.com/?s=...&post_type=addon` directly: real cards are
+`<a class="card card-wide ..." href="...">` with the addon name in an `<h5 class="fw-normal
+mb-0">`, and the thumbnail in the `<img>`'s `data-src` attribute, not `src`, which is always a
+lazyload placeholder). What actually shipped on `core/felbite-source` uses a regex verified
+against real fetched HTML, not this illustrative one -- see that branch for the real fixture and
+pattern.
 
 - [ ] **Step 3: Compile and run to verify it fails**
 
@@ -1985,7 +2017,7 @@ namespace Core
         return results;
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> FelbiteSource::SearchAsync(std::wstring query)
+    Task<std::vector<RemoteAddon>> FelbiteSource::SearchAsync(std::wstring query)
     {
         std::wstring url = L"https://felbite.com/?s=" + query + L"&post_type=addon";
         HttpClient client;
@@ -2019,6 +2051,16 @@ gh pr create --title "Add FelbiteSource" --body "TDD'd HTML parsing against a fi
 ---
 
 ### Task 10: Felbite scraper health check (CI)
+
+**Note (post-Task-9):** the `CARD_PATTERN` below (`<div class="addon-card">...`) is the same
+illustrative, never-verified-live pattern flagged as wrong in Task 9 -- felbite.com's real markup
+uses `<a class="card card-wide ...">` cards with the name in `<h5 class="fw-normal mb-0">` and the
+thumbnail in the `<img>` tag's `data-src` attribute. Step 2 below ("run it now to confirm it
+currently passes against the real site") would catch this immediately as designed, since this
+exact pattern was confirmed via a live fetch NOT to match. When implementing this task, mirror the
+real regex that shipped in `Core/FelbiteSource.cpp` on `core/felbite-source` instead of the pattern
+transcribed here, so Step 2 actually passes on the first try rather than requiring a fix-and-retry
+that's already been done once.
 
 **Files:**
 - Create: `tools/felbite-healthcheck/check.py`, `.github/workflows/felbite-healthcheck.yml`
@@ -2124,7 +2166,7 @@ gh pr create --title "Add Felbite scraper health check" --body "Daily scheduled 
   namespace Core {
       struct AddonCatalog {
           AddonCatalog(); // registers FelbiteSource; CurseForgeSource added here later, once a key exists
-          winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> SearchAsync(std::wstring query);
+          Task<std::vector<RemoteAddon>> SearchAsync(std::wstring query);
       };
   }
   ```
@@ -2143,7 +2185,7 @@ namespace Core
     struct AddonCatalog
     {
         AddonCatalog();
-        winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> SearchAsync(std::wstring query);
+        Task<std::vector<RemoteAddon>> SearchAsync(std::wstring query);
 
     private:
         std::vector<std::unique_ptr<IAddonSource>> m_sources;
@@ -2167,7 +2209,7 @@ namespace Core
         // half-built second source with no key to actually use it).
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<std::vector<RemoteAddon>> AddonCatalog::SearchAsync(std::wstring query)
+    Task<std::vector<RemoteAddon>> AddonCatalog::SearchAsync(std::wstring query)
     {
         std::vector<RemoteAddon> combined;
         for (auto const& source : m_sources)
@@ -2338,13 +2380,29 @@ gh pr create --title "Build out AddonsPage" --body "AddonCatalog wraps FelbiteSo
 - Consumes: `Core::RealmConfig` (Task 2) for the configured realm's armory host, if the realm exposes one.
 - Produces: nothing consumed elsewhere — leaf page.
 
+**Correction (post-Task-9, verified against a real build):** the interface below uses
+`Core::Task<T>` (defined in `Core/Async.h`), not
+`winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>>`. This is the exact
+same uncompilable pattern Task 9 hit and fixed: cppwinrt requires a coroutine's result type to have
+a registered ABI category to cross the COM vtable, and `std::vector<T>` has zero category
+specializations for any `T` -- see the Task 9 correction note above for the full grep-verified
+explanation. `Core::Task<std::vector<CharacterSummary>>` throughout is the same convention already
+used by `IAddonSource::SearchAsync`, `FelbiteSource::SearchAsync`, and `AddonCatalog::SearchAsync`
+on `core/felbite-source`. `co_await`-ing a `Task<T>` works identically from a `winrt::fire_and_forget`
+coroutine (Step 5 below is unaffected), since `co_await` only requires the awaited expression to be
+Awaitable, independent of the awaiting coroutine's own return type. Note also that `Task<T>` does
+NOT preserve the calling apartment/thread the way `IAsyncOperation<T>` does -- if a future
+`FetchCharactersAsync` implementation ever hops to a background thread internally, `CharactersPage`
+must keep wrapping its post-`co_await` UI mutation in `DispatcherQueue().TryEnqueue(...)` exactly as
+Step 5 already does.
+
 - [ ] **Step 1: `Core/ArmoryClient.h`**
 
 ```cpp
 #pragma once
 #include <string>
 #include <vector>
-#include <winrt/Windows.Foundation.h>
+#include "Async.h"
 
 namespace Core
 {
@@ -2352,7 +2410,7 @@ namespace Core
 
     struct ArmoryClient
     {
-        static winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>> FetchCharactersAsync(std::wstring accountName);
+        static Task<std::vector<CharacterSummary>> FetchCharactersAsync(std::wstring accountName);
     };
 }
 ```
@@ -2364,7 +2422,7 @@ namespace Core
 
 namespace Core
 {
-    winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>> ArmoryClient::FetchCharactersAsync(std::wstring)
+    Task<std::vector<CharacterSummary>> ArmoryClient::FetchCharactersAsync(std::wstring)
     {
         // No realm-specific armory endpoint is confirmed yet -- returns an
         // empty list rather than guessing a URL shape. CharactersPage shows
