@@ -19,7 +19,15 @@ namespace Core
         // existing failure path rather than duplicating it. Callers use this
         // to show an explicit "not signed in" state instead of silently
         // proceeding as if autofill worked (see the design spec's Error
-        // handling section).
+        // handling section). Delegates to the explicit-credential overload
+        // below after resolving the stored credential.
         static Task<bool> AutofillLoginAsync();
+
+        // Types the given credentials into the foreground window via
+        // SendInput, same mechanism as the no-arg overload above but without
+        // reading from the vault first -- used when the caller already has
+        // the credentials on hand (e.g. just typed into a login form this
+        // session) and doesn't want a Store() round-trip just to autofill.
+        static Task<bool> AutofillLoginAsync(std::wstring accountName, std::wstring password);
     };
 }

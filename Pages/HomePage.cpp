@@ -17,6 +17,15 @@ namespace winrt::AzerothCore::Pages::implementation
     {
         InitializeComponent();
         CheckRealmStatusAsync();
+
+        auto cfg = Core::RealmConfig::Load();
+        RememberMeCheckBox().IsChecked(cfg.CredentialVaultEnabled);
+
+        // Pre-fill the account name from a previously stored credential, but
+        // never the password -- a decrypted password must never be surfaced
+        // back into a visible UI control automatically.
+        if (auto cred = Core::CredentialVault::TryGet())
+            AccountNameBox().Text(cred->AccountName);
     }
 
     winrt::fire_and_forget HomePage::CheckRealmStatusAsync()
@@ -55,16 +64,17 @@ namespace winrt::AzerothCore::Pages::implementation
             });
     }
 
-    // fire_and_forget rather than void: this now has a real co_await (the
-    // credential-autofill result) in the Play flow, the first one in this
-    // file. Everything up to and including LaunchWow() runs synchronously,
-    // before any suspension point, so it's still safe to touch StatusTextBlock
-    // directly there; `queue` is still captured up front, before the
-    // co_await, per the DispatcherQueue()-hoisting pattern in
-    // Pages/AddonsPage.cpp's RunSearchAsync -- CredentialVault::AutofillLoginAsync
-    // is a Core::Task<T>, which does not preserve the calling thread (see
-    // Core/Async.h), and it genuinely does hop off the UI thread today via
-    // winrt::resume_after().
+    // fire_and_forget rather than void: this has a real co_await (the
+    // credential-autofill result) in the Play flow. Everything up to and
+    // including LaunchWow() and the RealmConfig::Save() below runs
+    // synchronously, before any suspension point, so it's still safe to
+    // touch StatusTextBlock (and read AccountNameBox/PasswordBox/
+    // RememberMeCheckBox) directly there; `queue` is still captured up
+    // front, before the co_await, per the DispatcherQueue()-hoisting pattern
+    // in Pages/AddonsPage.cpp's RunSearchAsync -- CredentialVault::
+    // AutofillLoginAsync is a Core::Task<T>, which does not preserve the
+    // calling thread (see Core/Async.h), and it genuinely does hop off the
+    // UI thread today via winrt::resume_after().
     winrt::fire_and_forget HomePage::PlayButton_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
@@ -78,6 +88,27 @@ namespace winrt::AzerothCore::Pages::implementation
             co_return;
         }
 
+        // UI control reads -- must happen here, before any co_await below.
+        std::wstring accountName = AccountNameBox().Text().c_str();
+        std::wstring password = PasswordBox().Password().c_str();
+        bool rememberMe = RememberMeCheckBox().IsChecked().GetBoolean();
+
+        bool configSaveFailed = false;
+        if (rememberMe && !password.empty())
+        {
+            Core::CredentialVault::Store(accountName, password);
+            cfg.CredentialVaultEnabled = true;
+            configSaveFailed = !cfg.Save();
+        }
+        else if (!rememberMe)
+        {
+            // Unchecking Remember me only stops it from being used going
+            // forward -- it does not wipe a previously stored credential.
+            // Clearing the vault is SettingsPage's explicit affordance.
+            cfg.CredentialVaultEnabled = false;
+            configSaveFailed = !cfg.Save();
+        }
+
         bool launched = Core::WowInstall::LaunchWow(cfg.WowPath, cfg.RealmAddress);
         if (!launched)
         {
@@ -86,19 +117,39 @@ namespace winrt::AzerothCore::Pages::implementation
             co_return;
         }
 
-        StatusTextBlock().Visibility(Visibility::Collapsed);
-
-        if (cfg.CredentialVaultEnabled)
+        if (configSaveFailed)
         {
-            bool signedIn = co_await Core::CredentialVault::AutofillLoginAsync();
+            StatusTextBlock().Text(L"Failed to save settings");
+            StatusTextBlock().Visibility(Visibility::Visible);
+        }
+        else
+        {
+            StatusTextBlock().Visibility(Visibility::Collapsed);
+        }
 
-            queue.TryEnqueue([this, lifetime, signedIn]()
+        // Prefer the credentials just typed into the form this session; only
+        // fall back to whatever's in the vault if the password field was
+        // left empty (e.g. relying on a credential saved in an earlier
+        // session).
+        bool attemptedAutofill = false;
+        bool signedIn = false;
+        if (!password.empty())
+        {
+            attemptedAutofill = true;
+            signedIn = co_await Core::CredentialVault::AutofillLoginAsync(accountName, password);
+        }
+        else if (cfg.CredentialVaultEnabled)
+        {
+            attemptedAutofill = true;
+            signedIn = co_await Core::CredentialVault::AutofillLoginAsync();
+        }
+
+        if (attemptedAutofill && !signedIn)
+        {
+            queue.TryEnqueue([this, lifetime]()
                 {
-                    if (!signedIn)
-                    {
-                        StatusTextBlock().Text(L"Not signed in - credentials not saved");
-                        StatusTextBlock().Visibility(Visibility::Visible);
-                    }
+                    StatusTextBlock().Text(L"Not signed in - credentials not saved");
+                    StatusTextBlock().Visibility(Visibility::Visible);
                 });
         }
     }

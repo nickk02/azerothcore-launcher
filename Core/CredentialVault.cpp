@@ -53,6 +53,11 @@ namespace Core
         if (!cred)
             co_return false;
 
+        co_return co_await AutofillLoginAsync(cred->AccountName, cred->Password);
+    }
+
+    Task<bool> CredentialVault::AutofillLoginAsync(std::wstring accountName, std::wstring password)
+    {
         // Give the WoW client's login screen time to draw and take focus
         // before simulating keystrokes into whatever window is foreground.
         co_await winrt::resume_after(std::chrono::milliseconds(2500));
@@ -72,12 +77,12 @@ namespace Core
                 }
             };
 
-        sendText(cred->AccountName);
+        sendText(accountName);
         INPUT tab[2] = {};
         tab[0].type = INPUT_KEYBOARD; tab[0].ki.wVk = VK_TAB;
         tab[1] = tab[0]; tab[1].ki.dwFlags = KEYEVENTF_KEYUP;
         SendInput(2, tab, sizeof(INPUT));
-        sendText(cred->Password);
+        sendText(password);
 
         co_return true;
     }
