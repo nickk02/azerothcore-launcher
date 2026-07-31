@@ -17,21 +17,30 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="64"/>
+                <ColumnDefinition Width="76"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Spacing="22" Padding="0,24,0,0"
-                        HorizontalAlignment="Center" Background="#0D0D0D">
-                <TextBlock x:Name="NavHome" Text="HOME" FontSize="9" Foreground="#F0C860"
-                           Tapped="NavHome_Tapped"/>
-                <TextBlock x:Name="NavAddons" Text="ADDONS" FontSize="9" Foreground="#88DCE4F2"
-                           Tapped="NavAddons_Tapped"/>
-                <TextBlock x:Name="NavCharacters" Text="CHARS" FontSize="9" Foreground="#88DCE4F2"
-                           Tapped="NavCharacters_Tapped"/>
-                <TextBlock x:Name="NavSettings" Text="SETTINGS" FontSize="9" Foreground="#88DCE4F2"
-                           Tapped="NavSettings_Tapped"/>
-            </StackPanel>
+            <Border Grid.Column="0" Background="#141414" BorderBrush="#242424" BorderThickness="0,0,1,0">
+                <StackPanel Spacing="4" Padding="0,24,0,0" HorizontalAlignment="Stretch">
+                    <Border Tapped="NavHome_Tapped" Background="Transparent" Padding="0,14">
+                        <TextBlock x:Name="NavHome" Text="HOME" FontSize="12" Foreground="#F0C860"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Tapped="NavAddons_Tapped" Background="Transparent" Padding="0,14">
+                        <TextBlock x:Name="NavAddons" Text="ADDONS" FontSize="12" Foreground="#B8DCE4F2"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Tapped="NavCharacters_Tapped" Background="Transparent" Padding="0,14">
+                        <TextBlock x:Name="NavCharacters" Text="CHARS" FontSize="12" Foreground="#B8DCE4F2"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Tapped="NavSettings_Tapped" Background="Transparent" Padding="0,14">
+                        <TextBlock x:Name="NavSettings" Text="SETTINGS" FontSize="12" Foreground="#B8DCE4F2"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+            </Border>
 
             <Frame x:Name="ContentFrame" Grid.Column="1"/>
         </Grid>
