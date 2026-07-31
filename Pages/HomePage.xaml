@@ -2,5 +2,34 @@
     x:Class="AzerothCore.Pages.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="#0A0A0A"/>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="70"/>
+        </Grid.RowDefinitions>
+
+        <Image Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
+               HorizontalAlignment="Left" Width="1400"/>
+
+        <Image Grid.Row="0" Source="/Assets/wotlk-logo.png" Height="168"
+               VerticalAlignment="Top" Margin="0,16,0,0"/>
+
+        <StackPanel x:Name="RealmStatusPanel" Grid.Row="0" Width="240"
+                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,26,0" Spacing="6">
+            <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
+                       Foreground="#CBB98A" FontSize="11"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center"
+                    Padding="18,0" Spacing="10">
+            <Button x:Name="OptionsButton" Content="Options"/>
+            <Button x:Name="AddonsButton" Content="Addons"/>
+            <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
+                    HorizontalAlignment="Right" Padding="30,8"/>
+            <TextBlock x:Name="PlaytimeLabel" Text="" Foreground="#88DCE4F2"
+                       FontSize="10" VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </StackPanel>
+    </Grid>
 </Page>
