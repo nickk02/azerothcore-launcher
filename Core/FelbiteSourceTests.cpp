@@ -92,6 +92,46 @@ int main()
     auto malformedResults = Core::FelbiteSource::ParseSearchResults(malformed);
     assert(malformedResults.empty());
 
+    // Regression test for the cross-card leak: a malformed card (no <h5>,
+    // same as above) immediately followed by a well-formed one. Before
+    // ParseSearchResults bounded each card to its own <a ...>...</a> block,
+    // a single unbounded lazy [\s\S]*? scan starting at the malformed card's
+    // opening tag could skip straight past its "</a>" and pick up the NEXT
+    // card's <h5>/downloads paragraph, producing a corrupted entry that
+    // pairs the malformed card's own href/thumbnail with the good card's
+    // name and download count. With the fix, the malformed card contributes
+    // no entry at all, and the good card is parsed as its own isolated
+    // block -- its fields must come entirely from ITS OWN markup, not
+    // leaked from the broken card in front of it.
+    std::wstring adjacent = LR"RX(
+        <a class="card card-wide bg-dark rounded-6 py-2" href="https://felbite.com/addon/9999-broken/">
+            <div class="wrapper"><div class="image"><img class="img-fluid" data-src="https://felbite.com/thumb-broken.png"></div></div>
+        </a>
+        <a class="card card-wide bg-dark rounded-6 py-2" href="https://felbite.com/addon/3583-ouroloot/">
+            <div class="wrapper">
+                <div class="image">
+                    <img class="img-fluid rounded-circle lazyload" data-src="https://felbite.com/wp-content/uploads/2022/03/felbite.com-ouroloot-logo-ouroloot.jpg" alt="OuroLoot Download" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjwvc3ZnPg==">
+                </div>
+                <div class="details">
+                    <div class="left-side align-self-center">
+                        <h5 class="fw-normal mb-0">OuroLoot</h5>
+                        <p class="text-light fw-normal my-2">Ouro Loot helps you easily tracks loot during a raid.</p>
+                        <div>
+                            <p class="text-muted mb-0">0.6K                        Downloads &bull; 9.8K Views
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    )RX";
+    auto adjacentResults = Core::FelbiteSource::ParseSearchResults(adjacent);
+    assert(adjacentResults.size() == 1);
+    assert(adjacentResults[0].Name == L"OuroLoot");
+    assert(adjacentResults[0].DownloadUrl == L"https://felbite.com/addon/3583-ouroloot/");
+    assert(adjacentResults[0].ThumbnailUrl == L"https://felbite.com/wp-content/uploads/2022/03/felbite.com-ouroloot-logo-ouroloot.jpg");
+    assert(adjacentResults[0].DownloadCount == 600);
+
     std::wcout << L"All FelbiteSource tests passed." << std::endl;
     return 0;
 }

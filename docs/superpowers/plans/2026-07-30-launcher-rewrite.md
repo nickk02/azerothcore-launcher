@@ -2380,13 +2380,29 @@ gh pr create --title "Build out AddonsPage" --body "AddonCatalog wraps FelbiteSo
 - Consumes: `Core::RealmConfig` (Task 2) for the configured realm's armory host, if the realm exposes one.
 - Produces: nothing consumed elsewhere — leaf page.
 
+**Correction (post-Task-9, verified against a real build):** the interface below uses
+`Core::Task<T>` (defined in `Core/Async.h`), not
+`winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>>`. This is the exact
+same uncompilable pattern Task 9 hit and fixed: cppwinrt requires a coroutine's result type to have
+a registered ABI category to cross the COM vtable, and `std::vector<T>` has zero category
+specializations for any `T` -- see the Task 9 correction note above for the full grep-verified
+explanation. `Core::Task<std::vector<CharacterSummary>>` throughout is the same convention already
+used by `IAddonSource::SearchAsync`, `FelbiteSource::SearchAsync`, and `AddonCatalog::SearchAsync`
+on `core/felbite-source`. `co_await`-ing a `Task<T>` works identically from a `winrt::fire_and_forget`
+coroutine (Step 5 below is unaffected), since `co_await` only requires the awaited expression to be
+Awaitable, independent of the awaiting coroutine's own return type. Note also that `Task<T>` does
+NOT preserve the calling apartment/thread the way `IAsyncOperation<T>` does -- if a future
+`FetchCharactersAsync` implementation ever hops to a background thread internally, `CharactersPage`
+must keep wrapping its post-`co_await` UI mutation in `DispatcherQueue().TryEnqueue(...)` exactly as
+Step 5 already does.
+
 - [ ] **Step 1: `Core/ArmoryClient.h`**
 
 ```cpp
 #pragma once
 #include <string>
 #include <vector>
-#include <winrt/Windows.Foundation.h>
+#include "Async.h"
 
 namespace Core
 {
@@ -2394,7 +2410,7 @@ namespace Core
 
     struct ArmoryClient
     {
-        static winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>> FetchCharactersAsync(std::wstring accountName);
+        static Task<std::vector<CharacterSummary>> FetchCharactersAsync(std::wstring accountName);
     };
 }
 ```
@@ -2406,7 +2422,7 @@ namespace Core
 
 namespace Core
 {
-    winrt::Windows::Foundation::IAsyncOperation<std::vector<CharacterSummary>> ArmoryClient::FetchCharactersAsync(std::wstring)
+    Task<std::vector<CharacterSummary>> ArmoryClient::FetchCharactersAsync(std::wstring)
     {
         // No realm-specific armory endpoint is confirmed yet -- returns an
         // empty list rather than guessing a URL shape. CharactersPage shows

@@ -74,32 +74,61 @@ namespace Core
     {
         std::vector<RemoteAddon> results;
 
-        // Matches felbite.com's real search-result card markup (confirmed
-        // against a live fetch of https://felbite.com/?s=...&post_type=addon
-        // on 2026-07-31 -- felbite has no official API and no documented
-        // markup contract, so this shape is verified ground truth, not a
-        // guess):
-        //   <a class="card card-wide ..." href="DETAIL_URL">
-        //     ...<img ... data-src="THUMBNAIL_URL" ...>...   (src is always
-        //                                a throwaway lazyload placeholder)
-        //     <h5 class="fw-normal mb-0">NAME</h5>
-        //     <p class="text-light fw-normal my-2">DESCRIPTION</p>  (optional)
-        //     ...<p class="text-muted mb-0">NUMBER SUFFIX Downloads ...
-        static const std::wregex cardRegex(
-            LR"RX(<a class="card card-wide[^"]*" href="([^"]+)">[\s\S]*?<img[^>]*data-src="([^"]+)"[^>]*>[\s\S]*?<h5 class="fw-normal mb-0">([^<]+)</h5>(?:[\s\S]*?<p class="text-light fw-normal my-2">([^<]*)</p>)?[\s\S]*?<p class="text-muted mb-0">\s*([\d.,]+)\s*([KMkm]?)\s*Downloads)RX");
+        // Step 1: isolate each result card as its own bounded block --
+        // <a class="card card-wide ..." href="DETAIL_URL">...</a> -- BEFORE
+        // extracting any fields from it. Cards never nest another <a> inside
+        // themselves (confirmed against a live fetch of
+        // https://felbite.com/?s=...&post_type=addon on 2026-07-31, all 10
+        // result cards), so the first </a> following a card's opening tag is
+        // guaranteed to be that same card's own closing tag, not a later
+        // card's. This bound matters: without it, a single lazy [\s\S]*? scan
+        // across the whole page can, for a malformed/truncated card, span
+        // straight past that card's own boundary and pick up fields from the
+        // NEXT card instead of failing cleanly -- e.g. pairing card N's URL
+        // with card N+1's name. Isolating the block first makes that
+        // cross-card leak structurally impossible: every field regex below
+        // runs only against one card's own isolated substring.
+        static const std::wregex cardBlockRegex(
+            LR"RX(<a class="card card-wide[^"]*" href="([^"]+)">([\s\S]*?)</a>)RX");
 
-        auto begin = std::wsregex_iterator(html.begin(), html.end(), cardRegex);
+        // Step 2: field extraction, run only against a single isolated card
+        // block (never against the whole page).
+        //   ...<img ... data-src="THUMBNAIL_URL" ...>...   (src is always
+        //                                a throwaway lazyload placeholder)
+        //   <h5 class="fw-normal mb-0">NAME</h5>
+        //   <p class="text-light fw-normal my-2">DESCRIPTION</p>  (optional)
+        //   ...<p class="text-muted mb-0">NUMBER SUFFIX Downloads ...
+        static const std::wregex imgRegex(LR"RX(<img[^>]*data-src="([^"]+)")RX");
+        static const std::wregex nameRegex(LR"RX(<h5 class="fw-normal mb-0">([^<]+)</h5>)RX");
+        static const std::wregex descRegex(LR"RX(<p class="text-light fw-normal my-2">([^<]*)</p>)RX");
+        static const std::wregex downloadsRegex(LR"RX(<p class="text-muted mb-0">\s*([\d.,]+)\s*([KMkm]?)\s*Downloads)RX");
+
+        auto begin = std::wsregex_iterator(html.begin(), html.end(), cardBlockRegex);
         auto end = std::wsregex_iterator();
         for (auto it = begin; it != end; ++it)
         {
-            auto const& match = *it;
+            auto const& block = *it;
+            std::wstring downloadUrl = block[1].str();
+            std::wstring inner = block[2].str();
+
+            // A malformed/truncated card (missing an expected element, e.g.
+            // no <h5> name) is skipped entirely rather than producing a
+            // partial or garbage entry.
+            std::wsmatch imgMatch, nameMatch, downloadsMatch, descMatch;
+            if (!std::regex_search(inner, imgMatch, imgRegex))
+                continue;
+            if (!std::regex_search(inner, nameMatch, nameRegex))
+                continue;
+            if (!std::regex_search(inner, downloadsMatch, downloadsRegex))
+                continue;
+            bool hasDescription = std::regex_search(inner, descMatch, descRegex);
 
             RemoteAddon addon;
-            addon.DownloadUrl = match[1].str();
-            addon.ThumbnailUrl = match[2].str();
-            addon.Name = match[3].str();
-            addon.Description = match[4].matched ? match[4].str() : L"";
-            addon.DownloadCount = ParseDownloadCount(match[5].str(), match[6].matched && !match[6].str().empty() ? match[6].str()[0] : L'\0');
+            addon.DownloadUrl = downloadUrl;
+            addon.ThumbnailUrl = imgMatch[1].str();
+            addon.Name = nameMatch[1].str();
+            addon.Description = hasDescription ? descMatch[1].str() : L"";
+            addon.DownloadCount = ParseDownloadCount(downloadsMatch[1].str(), !downloadsMatch[2].str().empty() ? downloadsMatch[2].str()[0] : L'\0');
             addon.SourceName = L"Felbite";
             addon.AddonFolderName = SlugFromUrl(addon.DownloadUrl);
             addon.Id = L"felbite:" + addon.AddonFolderName;
