@@ -7,6 +7,7 @@
 #include "Pages/AddonsPage.h"
 #include "Pages/CharactersPage.h"
 #include "Pages/SettingsPage.h"
+#include "Core/RealmConfig.h"
 
 using namespace winrt;
 using namespace Microsoft::UI::Xaml;
@@ -24,7 +25,19 @@ namespace winrt::AzerothCore::implementation
         auto appWindow = this->AppWindow();
         appWindow.Resize({ 900, 620 });
 
-        ContentFrame().Navigate(xaml_typename<AzerothCore::Pages::HomePage>());
+        // First run / never configured: send the user straight to Settings
+        // instead of a Home page that can't do anything useful yet without
+        // a realm address and a WoW install path.
+        auto cfg = Core::RealmConfig::Load();
+        if (cfg.RealmAddress.empty() && cfg.WowPath.empty())
+        {
+            ContentFrame().Navigate(xaml_typename<AzerothCore::Pages::SettingsPage>());
+            SetActiveNav(NavSettings());
+        }
+        else
+        {
+            ContentFrame().Navigate(xaml_typename<AzerothCore::Pages::HomePage>());
+        }
     }
 
     void MainWindow::SetupCustomTitleBar()
@@ -36,7 +49,7 @@ namespace winrt::AzerothCore::implementation
     void MainWindow::SetActiveNav(TextBlock const& active)
     {
         for (auto const& nav : { NavHome(), NavAddons(), NavCharacters(), NavSettings() })
-            nav.Foreground(SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(0x88, 0xDC, 0xE4, 0xF2)));
+            nav.Foreground(SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(0xB8, 0xDC, 0xE4, 0xF2)));
         active.Foreground(SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(0xFF, 0xF0, 0xC8, 0x60)));
     }
 

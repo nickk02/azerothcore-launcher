@@ -23,6 +23,13 @@ namespace winrt::AzerothCore::Pages::implementation
         RealmAddressBox().Text(cfg.RealmAddress);
         CredentialVaultToggle().IsChecked(cfg.CredentialVaultEnabled);
         CredentialFields().Visibility(cfg.CredentialVaultEnabled ? Visibility::Visible : Visibility::Collapsed);
+
+        // Not wired to real build-time codegen yet -- update this string on
+        // each dated release. The installer version (installer.iss) already
+        // derives its version from the build date automatically; this is a
+        // known simplification until the app version is generated the same
+        // way at build time.
+        VersionTextBlock().Text(L"AzerothCore v2026.07.31");
     }
 
     winrt::fire_and_forget SettingsPage::BrowseButton_Click(IInspectable const&, RoutedEventArgs const&)

@@ -30,5 +30,7 @@
 
         <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#FF6B6B" Visibility="Collapsed"/>
 
+        <TextBlock x:Name="VersionTextBlock" Text="" Foreground="#88DCE4F2" FontSize="10"/>
+
     </StackPanel>
 </Page>

@@ -4,51 +4,46 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="70"/>
-        </Grid.RowDefinitions>
-
-        <Image Grid.RowSpan="2" Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
+        <Image Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Image.RenderTransform>
                 <TranslateTransform X="-110"/>
             </Image.RenderTransform>
         </Image>
 
-        <Image Grid.Row="0" Source="/Assets/wotlk-logo.png" Height="130"
+        <Image Source="/Assets/wotlk-logo.png" Height="130"
                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16,0,0"/>
 
-        <Border Grid.Row="0" Width="240" HorizontalAlignment="Right" VerticalAlignment="Center"
-                Margin="0,0,26,0" Padding="16" CornerRadius="4"
-                Background="#CC0A0A0A" BorderBrush="#CBB98A" BorderThickness="1">
-            <StackPanel Spacing="12">
-                <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
-                           Foreground="#CBB98A" FontSize="11" HorizontalAlignment="Center"/>
+        <StackPanel Width="240" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,26,0" Spacing="12">
+            <Border Padding="16" CornerRadius="4"
+                    Background="#CC0A0A0A" BorderBrush="#CBB98A" BorderThickness="1">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
+                               Foreground="#CBB98A" FontSize="11" HorizontalAlignment="Center"/>
 
-                <StackPanel Spacing="4">
-                    <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                    <TextBox x:Name="AccountNameBox" Background="#141414" Foreground="#DCE4F2"
-                             BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
-                </StackPanel>
-
-                <StackPanel Spacing="4">
-                    <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                    <PasswordBox x:Name="PasswordBox" Background="#141414" Foreground="#DCE4F2"
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                        <TextBox x:Name="AccountNameBox" Background="#141414" Foreground="#DCE4F2"
                                  BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                        <PasswordBox x:Name="PasswordBox" Background="#141414" Foreground="#DCE4F2"
+                                     BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                    </StackPanel>
+
+                    <CheckBox x:Name="RememberMeCheckBox" Content="Remember me" Foreground="#DCE4F2"/>
                 </StackPanel>
+            </Border>
 
-                <CheckBox x:Name="RememberMeCheckBox" Content="Remember me" Foreground="#DCE4F2"/>
-            </StackPanel>
-        </Border>
-
-        <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center"
-                    Padding="18,0" Spacing="10">
             <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
-                    HorizontalAlignment="Right" Padding="30,8"/>
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"/>
+
             <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
-                       FontSize="10" VerticalAlignment="Center" Margin="12,0,0,0"
-                       Visibility="Collapsed"/>
+                       FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap"
+                       TextAlignment="Center" Visibility="Collapsed"/>
         </StackPanel>
     </Grid>
 </Page>
