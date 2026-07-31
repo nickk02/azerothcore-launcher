@@ -8,7 +8,7 @@ namespace winrt::AzerothCore::Pages::implementation
         HomePage();
 
         winrt::fire_and_forget CheckRealmStatusAsync();
-        void PlayButton_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
+        winrt::fire_and_forget PlayButton_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
     };
 }
 

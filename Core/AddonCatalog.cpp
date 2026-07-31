@@ -11,22 +11,26 @@ namespace Core
         // half-built second source with no key to actually use it).
     }
 
-    Task<std::vector<RemoteAddon>> AddonCatalog::SearchAsync(std::wstring query)
+    Task<AddonSearchResult> AddonCatalog::SearchAsync(std::wstring query)
     {
-        std::vector<RemoteAddon> combined;
+        AddonSearchResult result;
         for (auto const& source : m_sources)
         {
             try
             {
                 auto results = co_await source->SearchAsync(query);
-                combined.insert(combined.end(), results.begin(), results.end());
+                result.Addons.insert(result.Addons.end(), results.begin(), results.end());
             }
             catch (...)
             {
                 // One source failing (e.g. Felbite scraper broke) shouldn't
-                // blank out results from any other configured source.
+                // blank out results from any other configured source, but it
+                // does need to be recorded: AddonsPage uses this to show a
+                // real "addon search unavailable" state instead of an
+                // empty-looking "no addons found" list.
+                result.AnySourceFailed = true;
             }
         }
-        co_return combined;
+        co_return result;
     }
 }

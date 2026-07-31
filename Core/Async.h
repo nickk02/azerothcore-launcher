@@ -41,11 +41,18 @@ namespace Core
     // to finish on (e.g. a background thread pool thread if the body used
     // co_await winrt::resume_background() and never hopped back). Any caller
     // that touches UI/XAML state after `co_await`-ing a Task<T>-returning
-    // method MUST wrap that touch in DispatcherQueue().TryEnqueue(...),
-    // exactly like the existing pattern in Pages/HomePage.cpp's
-    // CheckRealmStatusAsync. Task<T> deliberately does not add automatic
-    // marshaling itself -- that would duplicate an established codebase
-    // convention for no benefit.
+    // method MUST wrap that touch in DispatcherQueue().TryEnqueue(...) --
+    // AND must call DispatcherQueue() itself BEFORE the co_await, not after,
+    // since DispatcherQueue() is a property of a thread-affine
+    // DependencyObject and is therefore just as unsafe to call off the UI
+    // thread as the TryEnqueue'd body would be. See the established pattern
+    // in Pages/AddonsPage.cpp's RunSearchAsync, which genuinely exercises
+    // this hazard (its Task<T>-returning call hops onto a background thread
+    // via resume_background() before resuming): capture
+    // `auto queue = DispatcherQueue();` first, then `co_await` the Task<T>,
+    // then call `queue.TryEnqueue(...)`. Task<T> deliberately does not add
+    // automatic marshaling itself -- that would duplicate an established
+    // codebase convention for no benefit.
     //
     // Lazy start (initial_suspend returns suspend_always) is load-bearing,
     // not a style choice: the coroutine body -- including any

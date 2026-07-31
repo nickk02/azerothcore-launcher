@@ -178,7 +178,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="app.rc" />
+    <ResourceCompile Include="app.rc" Condition="Exists('Assets\wotlk-icon.ico')" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
