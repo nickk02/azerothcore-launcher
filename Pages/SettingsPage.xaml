@@ -28,5 +28,7 @@
             </StackPanel>
         </StackPanel>
 
+        <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#FF6B6B" Visibility="Collapsed"/>
+
     </StackPanel>
 </Page>

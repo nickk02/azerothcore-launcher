@@ -25,35 +25,47 @@ namespace winrt::AzerothCore::Pages::implementation
         CredentialFields().Visibility(cfg.CredentialVaultEnabled ? Visibility::Visible : Visibility::Collapsed);
     }
 
-    void SettingsPage::BrowseButton_Click(IInspectable const&, RoutedEventArgs const&)
+    winrt::fire_and_forget SettingsPage::BrowseButton_Click(IInspectable const&, RoutedEventArgs const&)
     {
-        // Deliberately synchronous-looking wrapper kept minimal: file picker
-        // requires the window handle, obtained via WinRT interop.
+        auto lifetime = get_strong();
+
+        // File picker requires the window handle, obtained via WinRT interop.
         auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
         picker.FileTypeFilter().Append(L".exe");
         auto initializeWithWindow = picker.as<::IInitializeWithWindow>();
         HWND hwnd = GetActiveWindow();
         initializeWithWindow->Initialize(hwnd);
 
-        auto file = picker.PickSingleFileAsync().get();
+        auto file = co_await picker.PickSingleFileAsync();
         if (!file)
-            return;
+            co_return;
 
         std::wstring path = file.Path().c_str();
         if (!Core::WowInstall::IsValidWowExe(path))
-            return;
+            co_return;
 
-        WowPathBox().Text(path);
         auto cfg = Core::RealmConfig::Load();
         cfg.WowPath = path;
-        cfg.Save();
+        bool saved = cfg.Save();
+
+        DispatcherQueue().TryEnqueue([this, lifetime, path, saved]()
+            {
+                WowPathBox().Text(path);
+                if (saved)
+                    StatusTextBlock().Visibility(Visibility::Collapsed);
+                else
+                    ShowSaveError();
+            });
     }
 
     void SettingsPage::RealmAddressBox_TextChanged(IInspectable const&, Controls::TextChangedEventArgs const&)
     {
         auto cfg = Core::RealmConfig::Load();
         cfg.RealmAddress = RealmAddressBox().Text().c_str();
-        cfg.Save();
+        if (cfg.Save())
+            StatusTextBlock().Visibility(Visibility::Collapsed);
+        else
+            ShowSaveError();
     }
 
     void SettingsPage::CredentialVaultToggle_Changed(IInspectable const&, RoutedEventArgs const&)
@@ -63,10 +75,19 @@ namespace winrt::AzerothCore::Pages::implementation
 
         auto cfg = Core::RealmConfig::Load();
         cfg.CredentialVaultEnabled = enabled;
-        cfg.Save();
+        if (cfg.Save())
+            StatusTextBlock().Visibility(Visibility::Collapsed);
+        else
+            ShowSaveError();
 
         if (!enabled)
             Core::CredentialVault::Clear();
+    }
+
+    void SettingsPage::ShowSaveError()
+    {
+        StatusTextBlock().Text(L"Failed to save settings");
+        StatusTextBlock().Visibility(Visibility::Visible);
     }
 
     void SettingsPage::SaveCredentialButton_Click(IInspectable const&, RoutedEventArgs const&)
