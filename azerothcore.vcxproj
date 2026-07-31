@@ -104,6 +104,9 @@
     <ClCompile Include="Core\CredentialVault.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Core\FelbiteSource.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Pages\HomePage.cpp">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClCompile>
@@ -129,6 +132,9 @@
     <ClInclude Include="Core\RealmStatusChecker.h" />
     <ClInclude Include="Core\WowInstall.h" />
     <ClInclude Include="Core\CredentialVault.h" />
+    <ClInclude Include="Core\Async.h" />
+    <ClInclude Include="Core\IAddonSource.h" />
+    <ClInclude Include="Core\FelbiteSource.h" />
     <ClInclude Include="Pages\HomePage.h">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClInclude>
