@@ -2,5 +2,22 @@
     x:Class="AzerothCore.Pages.AddonsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Background="#0A0A0A"/>
+    <Grid Background="#0A0A0A">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Padding="18" Spacing="8">
+            <TextBox x:Name="SearchBox" Width="300" PlaceholderText="Search addons"
+                     KeyDown="SearchBox_KeyDown"/>
+            <Button x:Name="SearchButton" Content="Search" Click="SearchButton_Click"/>
+            <HyperlinkButton x:Name="OpenFolderLink" Content="Open addons folder"
+                             Click="OpenFolderLink_Click"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Padding="18,0">
+            <ItemsControl x:Name="ResultsList"/>
+        </ScrollViewer>
+    </Grid>
 </Page>
