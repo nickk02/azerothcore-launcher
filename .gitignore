@@ -19,6 +19,7 @@
 # Loose object files and test executables from ad-hoc compilation
 *.obj
 *_test.exe
+*Tests.exe
 
 # Internal task-execution progress tracking, not part of the shipped app.
 .superpowers/
