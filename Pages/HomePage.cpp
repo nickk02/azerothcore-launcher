@@ -28,6 +28,19 @@ namespace winrt::AzerothCore::Pages::implementation
             AccountNameBox().Text(cred->AccountName);
     }
 
+    // WinUI3 panels do not clip their children to their own bounds, and there is
+    // no ClipToBounds property to turn that on. The hero image overhangs the left
+    // edge by design (see HomePage.xaml), and without an explicit clip that
+    // overhang is painted over MainWindow's nav rail, hiding it entirely --
+    // which reads as "the Settings button disappeared" rather than as a drawing
+    // bug. Re-cutting the clip on every size change covers window resizes.
+    void HomePage::RootGrid_SizeChanged(IInspectable const&, SizeChangedEventArgs const& e)
+    {
+        Media::RectangleGeometry geometry;
+        geometry.Rect({ 0.0f, 0.0f, e.NewSize().Width, e.NewSize().Height });
+        RootGrid().Clip(geometry);
+    }
+
     winrt::fire_and_forget HomePage::CheckRealmStatusAsync()
     {
         auto lifetime = get_strong();

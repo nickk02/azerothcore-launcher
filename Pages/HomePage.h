@@ -8,6 +8,7 @@ namespace winrt::AzerothCore::Pages::implementation
         HomePage();
 
         winrt::fire_and_forget CheckRealmStatusAsync();
+        void RootGrid_SizeChanged(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::SizeChangedEventArgs const&);
         winrt::fire_and_forget PlayButton_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
     };
 }
