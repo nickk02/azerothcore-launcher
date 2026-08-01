@@ -3,13 +3,20 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid>
+    <!-- RootGrid is clipped to its own bounds in code-behind (WinUI3 panels do
+         not clip children, and there is no ClipToBounds). Without that clip the
+         hero image below, which deliberately overhangs the left edge, paints
+         straight over MainWindow's nav rail and hides it. -->
+    <Grid x:Name="RootGrid" SizeChanged="RootGrid_SizeChanged">
+        <!-- The negative left margin does two jobs at once, which is why this is
+             a margin and not a RenderTransform. A transform moves the image
+             after layout, so panning left by 110px left a 110px gap on the
+             right; a negative margin instead makes the layout box 110px wider
+             AND starts it 110px early, so the art still reaches the right edge.
+             The overhang on the left is what RootGrid's clip absorbs. -->
         <Image Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
-               HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Image.RenderTransform>
-                <TranslateTransform X="-110"/>
-            </Image.RenderTransform>
-        </Image>
+               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+               Margin="-110,0,0,0"/>
 
         <Image Source="/Assets/wotlk-logo.png" Height="130"
                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16,0,0"/>
@@ -38,8 +45,28 @@
                 </StackPanel>
             </Border>
 
+            <!-- Play is the primary action on this page and sits on a dark hero
+                 image, where the default Button styling is nearly invisible.
+                 The state brushes are overridden as resources rather than by
+                 setting Background/Foreground directly, because the default
+                 template swaps those out on hover and press and would undo a
+                 plain property set. Colours are the palette already used by the
+                 login border (#CBB98A) and the active nav item (#F0C860). -->
             <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
-                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,10"/>
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Padding="0,10" FontSize="15" FontWeight="SemiBold">
+                <Button.Resources>
+                    <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A89768"/>
+                    <SolidColorBrush x:Key="ButtonForeground" Color="#0A0A0A"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#0A0A0A"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#0A0A0A"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#F0C860"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#F0C860"/>
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
+                </Button.Resources>
+            </Button>
 
             <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
                        FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap"
