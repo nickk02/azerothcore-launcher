@@ -4,9 +4,68 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Page.Resources>
+        <!-- Lightweight styling. Every one of these keys is a brush the default
+             control template already looks up by name, so overriding them here
+             restyles every TextBox, PasswordBox and CheckBox on the page at
+             once. Setting Background/BorderBrush on the controls directly does
+             not work: the templates swap those brushes out again on hover,
+             press and focus, so a plain property set looks correct until the
+             pointer touches it and then snaps back to system chrome. Every
+             interactive state is listed explicitly for that reason. A state
+             left out is a state that falls back to default light-theme blue. -->
+
+        <!-- TextBox and PasswordBox share the TextControl* keys. -->
+        <SolidColorBrush x:Key="TextControlBackground" Color="#B3141414"/>
+        <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#CC1C1C1C"/>
+        <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#F2101010"/>
+        <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="#66141414"/>
+
+        <SolidColorBrush x:Key="TextControlBorderBrush" Color="#66CBB98A"/>
+        <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#A6CBB98A"/>
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#F0C860"/>
+        <SolidColorBrush x:Key="TextControlBorderBrushDisabled" Color="#33CBB98A"/>
+
+        <SolidColorBrush x:Key="TextControlForeground" Color="#DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextControlForegroundDisabled" Color="#77DCE4F2"/>
+
+        <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#66DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#88DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#88DCE4F2"/>
+
+        <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#CBB98A"/>
+
+        <!-- CheckBox: box stroke, box fill and glyph each have their own
+             unchecked/checked x rest/hover/press brush. -->
+        <SolidColorBrush x:Key="CheckBoxForegroundUnchecked" Color="#DCE4F2"/>
+        <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPointerOver" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxForegroundUncheckedPressed" Color="#CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxForegroundChecked" Color="#DCE4F2"/>
+        <SolidColorBrush x:Key="CheckBoxForegroundCheckedPointerOver" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxForegroundCheckedPressed" Color="#CBB98A"/>
+
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked" Color="#88CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPressed" Color="#CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="#CBB98A"/>
+
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUnchecked" Color="#66141414"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPointerOver" Color="#33CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPressed" Color="#55CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="#CBB98A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="#F0C860"/>
+        <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="#A89768"/>
+
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="#0A0A0A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#0A0A0A"/>
+        <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#0A0A0A"/>
+
         <!-- A launcher that never moves reads as a screenshot of an application
              rather than an application. The hero drifts continuously, and the
-             logo and login box arrive rather than appearing. Both are slow and
+             logo and panel arrive rather than appearing. Both are slow and
              low-amplitude on purpose: this should register as the page being
              alive, not as an effect demanding attention. -->
         <Storyboard x:Key="HeroDrift" RepeatBehavior="Forever" AutoReverse="True">
@@ -40,11 +99,14 @@
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
 
-            <DoubleAnimation Storyboard.TargetName="LoginPanel" Storyboard.TargetProperty="Opacity"
+            <!-- The panel slides in from its own edge rather than from below.
+                 It is anchored to the right side of the window, so coming in
+                 from the right reads as the panel settling into place. -->
+            <DoubleAnimation Storyboard.TargetName="SidePanel" Storyboard.TargetProperty="Opacity"
                              From="0" To="1" BeginTime="0:0:0.12" Duration="0:0:0.5"
                              EnableDependentAnimation="True"/>
-            <DoubleAnimation Storyboard.TargetName="LoginTransform" Storyboard.TargetProperty="TranslateY"
-                             From="22" To="0" BeginTime="0:0:0.12" Duration="0:0:0.6"
+            <DoubleAnimation Storyboard.TargetName="PanelTransform" Storyboard.TargetProperty="TranslateX"
+                             From="34" To="0" BeginTime="0:0:0.12" Duration="0:0:0.6"
                              EnableDependentAnimation="True">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
@@ -66,75 +128,172 @@
             </Image.RenderTransform>
         </Image>
 
-        <!-- Two columns so the logo centres on the art rather than on the whole
-             page. Centred across the full width it collided with the login box,
-             putting the panel on top of "WARCRAFT". -->
+        <!-- The wash spans the whole window rather than sitting inside the
+             field column, which is what lets the fade be wider than the fields
+             are. It runs clear until 28% and is fully opaque by 52%, so the
+             transition is about a quarter of the window wide: at the old width
+             (a fifth of a 372px column, ~74px) the fade was short enough to
+             read as a vertical line with a soft edge rather than as the art
+             falling away into the logon area. The art itself is never resized;
+             only what is laid over it changes. -->
+        <Rectangle x:Name="ArtWash">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Offset="0.00" Color="#000A0A0A"/>
+                    <GradientStop Offset="0.28" Color="#000A0A0A"/>
+                    <GradientStop Offset="0.40" Color="#960A0A0A"/>
+                    <GradientStop Offset="0.52" Color="#F70A0A0A"/>
+                    <GradientStop Offset="1.00" Color="#F70A0A0A"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- The logo centres on the art column, which is everything left of
+             the point the wash goes opaque: 52% of the fixed 1100px window,
+             so 572. Centring inside a column of that exact width rather than
+             setting a margin means the logo stays centred if its size changes;
+             a hand-computed offset silently goes wrong the moment the art is
+             rescaled. The window cannot be resized, so a literal 572 is honest
+             here in a way it would not be in a fluid layout. -->
+        <!-- Two grids rather than one three-column grid: the wash boundary
+             (572) and the field column (372 from the right) are independent
+             numbers, and forcing them into shared columns would tie the fade
+             to the field width, which is the coupling this change removes. -->
         <Grid>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="572"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="300"/>
             </Grid.ColumnDefinitions>
 
-            <Image x:Name="LogoImage" Grid.Column="0" Source="/Assets/wotlk-logo.png" Height="150"
-                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" Opacity="0"
+            <Image x:Name="LogoImage" Grid.Column="0" Source="/Assets/wotlk-logo.png" Height="140"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
                    RenderTransformOrigin="0.5,0.5">
                 <Image.RenderTransform>
                     <CompositeTransform x:Name="LogoTransform"/>
                 </Image.RenderTransform>
             </Image>
+        </Grid>
 
-            <StackPanel x:Name="LoginPanel" Grid.Column="1" Width="252"
-                        HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Opacity="0">
-                <StackPanel.RenderTransform>
-                    <CompositeTransform x:Name="LoginTransform"/>
-                </StackPanel.RenderTransform>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="372"/>
+            </Grid.ColumnDefinitions>
 
-                <Border Padding="16" CornerRadius="4"
-                        Background="#D90A0A0A" BorderBrush="#CBB98A" BorderThickness="1">
-                    <StackPanel Spacing="12">
+            <Border x:Name="SidePanel" Grid.Column="1" Opacity="0">
+                <Border.RenderTransform>
+                    <CompositeTransform x:Name="PanelTransform"/>
+                </Border.RenderTransform>
+
+                <Grid Margin="34,0,26,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" VerticalAlignment="Center" Spacing="14">
+
                         <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
-                                   Foreground="#CBB98A" FontSize="11" HorizontalAlignment="Center"/>
+                                   Foreground="#CBB98A" FontSize="11" FontWeight="SemiBold"/>
 
                         <StackPanel Spacing="4">
                             <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                            <TextBox x:Name="AccountNameBox" Background="#141414" Foreground="#DCE4F2"
-                                     BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                            <TextBox x:Name="AccountNameBox" Padding="8,6"/>
                         </StackPanel>
 
                         <StackPanel Spacing="4">
                             <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                            <PasswordBox x:Name="PasswordBox" Background="#141414" Foreground="#DCE4F2"
-                                         BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                            <PasswordBox x:Name="PasswordBox" Padding="8,6"/>
                         </StackPanel>
 
-                        <CheckBox x:Name="RememberMeCheckBox" Content="Remember me" Foreground="#DCE4F2"/>
+                        <CheckBox x:Name="RememberMeCheckBox" Content="Remember me"
+                                  Checked="RememberMeCheckBox_Changed" Unchecked="RememberMeCheckBox_Changed"/>
+
+                        <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Padding="0,12" FontSize="16" FontWeight="SemiBold" CornerRadius="3">
+                            <Button.Resources>
+                                <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A89768"/>
+                                <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="#44CBB98A"/>
+                                <SolidColorBrush x:Key="ButtonForeground" Color="#0A0A0A"/>
+                                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#0A0A0A"/>
+                                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#0A0A0A"/>
+                                <SolidColorBrush x:Key="ButtonForegroundDisabled" Color="#880A0A0A"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrush" Color="#F0C860"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#FFE9A6"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
+                                <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#44F0C860"/>
+                            </Button.Resources>
+                        </Button>
+
+                        <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#FF9B9B"
+                                   FontSize="11" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+                        <!-- Setup lives on this page rather than behind a tab.
+                             There are four fields in the whole application; a
+                             separate destination for two of them was more
+                             navigation than the app has content. The rule is
+                             the grouping: these are configured once and then
+                             ignored, unlike the login fields above. -->
+                        <StackPanel Spacing="10" Margin="0,6,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="SETUP" Foreground="#88CBB98A"
+                                           FontSize="10" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <Rectangle Grid.Column="1" Height="1" Fill="#33CBB98A"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="WOW INSTALL" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="WowPathBox" Grid.Column="0" IsReadOnly="True"
+                                             Padding="8,6" FontSize="12"
+                                             PlaceholderText="Not set"/>
+                                    <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse"
+                                            Click="BrowseButton_Click" Padding="12,6" CornerRadius="3">
+                                        <!-- Ghost variant of the Play button:
+                                             same palette, outline instead of
+                                             fill, so it reads as secondary but
+                                             still has real hover and press
+                                             states of its own. -->
+                                        <Button.Resources>
+                                            <SolidColorBrush x:Key="ButtonBackground" Color="#00000000"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#33CBB98A"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#59CBB98A"/>
+                                            <SolidColorBrush x:Key="ButtonForeground" Color="#CBB98A"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#F0C860"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#F0C860"/>
+                                            <SolidColorBrush x:Key="ButtonBorderBrush" Color="#66CBB98A"/>
+                                            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#F0C860"/>
+                                            <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
+                                        </Button.Resources>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="REALM ADDRESS" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                                <TextBox x:Name="RealmAddressBox" Padding="8,6" FontSize="12"
+                                         PlaceholderText="e.g. 10.0.0.85"
+                                         TextChanged="RealmAddressBox_TextChanged"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
-                </Border>
 
-                <!-- State brushes are overridden as resources rather than by
-                     setting Background/Foreground directly, because the default
-                     template swaps those out on hover and press and would undo a
-                     plain property set. -->
-                <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Padding="0,12" FontSize="16" FontWeight="SemiBold">
-                    <Button.Resources>
-                        <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
-                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
-                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A89768"/>
-                        <SolidColorBrush x:Key="ButtonForeground" Color="#0A0A0A"/>
-                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#0A0A0A"/>
-                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#0A0A0A"/>
-                        <SolidColorBrush x:Key="ButtonBorderBrush" Color="#F0C860"/>
-                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#F0C860"/>
-                        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
-                    </Button.Resources>
-                </Button>
-
-                <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
-                           FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap"
-                           TextAlignment="Center" Visibility="Collapsed"/>
-            </StackPanel>
+                    <TextBlock x:Name="VersionTextBlock" Grid.Row="1" Text=""
+                               Foreground="#66DCE4F2" FontSize="10" Margin="0,0,0,16"/>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Page>

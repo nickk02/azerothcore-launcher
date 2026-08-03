@@ -2,5 +2,11 @@
     x:Class="AzerothCore.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:AzerothCore">
+    xmlns:local="using:AzerothCore"
+    RequestedTheme="Dark">
+    <!-- Pinned to Dark rather than following the system. The whole UI is a dark
+         composition over dark hero art; under a light system theme the parts
+         that still use default chrome (scrollbars, the file picker's own
+         framing, control focus rings) come back light and read as a rendering
+         fault next to the hand-styled fields. -->
 </Application>

@@ -10,53 +10,18 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Navigation lives in the title bar now: the old 76px left rail cost
-             horizontal space the hero art wanted and gave nothing back for it.
-             Only DragRegion is passed to SetTitleBar(); if the whole bar were the
-             drag region it would swallow clicks on the nav items. -->
-        <Grid Grid.Row="0" Background="#141414">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Border x:Name="DragRegion" Grid.Column="0" Background="Transparent" Padding="14,0,20,0">
-                <TextBlock Text="AZEROTHCORE" Foreground="#CBB98A" FontSize="12"
-                           FontWeight="SemiBold" VerticalAlignment="Center"/>
-            </Border>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <Border x:Name="NavHomeItem" Tapped="NavHome_Tapped" Background="Transparent"
-                        Padding="16,0" Height="44">
-                    <Grid>
-                        <TextBlock x:Name="NavHome" Text="HOME" FontSize="12" Foreground="#F0C860"
-                                   VerticalAlignment="Center"/>
-                        <Rectangle x:Name="NavHomeUnderline" Height="2" Fill="#F0C860" Opacity="1"
-                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="NavAddonsItem" Tapped="NavAddons_Tapped" Background="Transparent"
-                        Padding="16,0" Height="44">
-                    <Grid>
-                        <TextBlock x:Name="NavAddons" Text="ADDONS" FontSize="12" Foreground="#B8DCE4F2"
-                                   VerticalAlignment="Center"/>
-                        <Rectangle x:Name="NavAddonsUnderline" Height="2" Fill="#F0C860" Opacity="0"
-                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="NavSettingsItem" Tapped="NavSettings_Tapped" Background="Transparent"
-                        Padding="16,0" Height="44">
-                    <Grid>
-                        <TextBlock x:Name="NavSettings" Text="SETTINGS" FontSize="12" Foreground="#B8DCE4F2"
-                                   VerticalAlignment="Center"/>
-                        <Rectangle x:Name="NavSettingsUnderline" Height="2" Fill="#F0C860" Opacity="0"
-                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
-                    </Grid>
-                </Border>
-            </StackPanel>
+        <!-- The title bar is chrome and nothing else: a wordmark, the system
+             caption buttons, and drag space. The nav items that used to live
+             here are gone along with the destinations they pointed at: login
+             and setup are one page now, and Addons is not built yet. With no
+             clickable children left, the entire bar goes to SetTitleBar(),
+             which is what makes all of it draggable. Put an interactive
+             control back in here and the drag region will swallow its clicks;
+             carve out a narrower Border for the drag region if that happens. -->
+        <Grid x:Name="TitleBar" Grid.Row="0" Background="#141414">
+            <TextBlock Text="AZEROTHCORE" Foreground="#CBB98A" FontSize="12"
+                       FontWeight="SemiBold" VerticalAlignment="Center"
+                       Margin="16,0,0,0"/>
         </Grid>
 
         <Frame x:Name="ContentFrame" Grid.Row="1"/>
