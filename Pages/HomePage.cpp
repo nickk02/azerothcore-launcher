@@ -7,6 +7,8 @@
 #include "../Core/RealmStatusChecker.h"
 #include "../Core/WowInstall.h"
 #include "../Core/CredentialVault.h"
+#include <winrt/Windows.Storage.Pickers.h>
+#include <ShObjIdl.h>
 
 using namespace winrt;
 using namespace Microsoft::UI::Xaml;
@@ -19,6 +21,8 @@ namespace winrt::AzerothCore::Pages::implementation
         CheckRealmStatusAsync();
 
         auto cfg = Core::RealmConfig::Load();
+        WowPathBox().Text(cfg.WowPath);
+        RealmAddressBox().Text(cfg.RealmAddress);
         RememberMeCheckBox().IsChecked(cfg.CredentialVaultEnabled);
 
         // Pre-fill the account name from a previously stored credential, but
@@ -26,6 +30,15 @@ namespace winrt::AzerothCore::Pages::implementation
         // back into a visible UI control automatically.
         if (auto cred = Core::CredentialVault::TryGet())
             AccountNameBox().Text(cred->AccountName);
+
+        // Not wired to real build-time codegen yet -- update this string on
+        // each dated release. The installer version (installer.iss) already
+        // derives its version from the build date automatically; this is a
+        // known simplification until the app version is generated the same
+        // way at build time.
+        VersionTextBlock().Text(L"AzerothCore v2026.08.03");
+
+        m_loading = false;
 
         // Storyboards defined in Page.Resources have to be started from here:
         // WinUI3 XAML has no EventTrigger/BeginStoryboard, so there is no
@@ -48,12 +61,17 @@ namespace winrt::AzerothCore::Pages::implementation
             storyboard.Begin();
     }
 
+    void HomePage::ShowError(std::wstring_view message)
+    {
+        StatusTextBlock().Text(hstring{ message });
+        StatusTextBlock().Visibility(Visibility::Visible);
+    }
+
     // WinUI3 panels do not clip their children to their own bounds, and there is
     // no ClipToBounds property to turn that on. The hero image overhangs the left
-    // edge by design (see HomePage.xaml), and without an explicit clip that
-    // overhang is painted over MainWindow's nav rail, hiding it entirely --
-    // which reads as "the Settings button disappeared" rather than as a drawing
-    // bug. Re-cutting the clip on every size change covers window resizes.
+    // edge by design (see HomePage.xaml) and scales past its box while drifting;
+    // without an explicit clip that overhang is painted over the shell around it.
+    // Re-cutting the clip on every size change covers the DPI-change case.
     void HomePage::RootGrid_SizeChanged(IInspectable const&, SizeChangedEventArgs const& e)
     {
         Media::RectangleGeometry geometry;
@@ -116,8 +134,7 @@ namespace winrt::AzerothCore::Pages::implementation
         auto cfg = Core::RealmConfig::Load();
         if (cfg.WowPath.empty())
         {
-            StatusTextBlock().Text(L"No WoW install path configured - check Settings");
-            StatusTextBlock().Visibility(Visibility::Visible);
+            ShowError(L"No WoW install set - use Browse below to point at your Wow.exe");
             co_return;
         }
 
@@ -133,32 +150,18 @@ namespace winrt::AzerothCore::Pages::implementation
             cfg.CredentialVaultEnabled = true;
             configSaveFailed = !cfg.Save();
         }
-        else if (!rememberMe)
-        {
-            // Unchecking Remember me only stops it from being used going
-            // forward -- it does not wipe a previously stored credential.
-            // Clearing the vault is SettingsPage's explicit affordance.
-            cfg.CredentialVaultEnabled = false;
-            configSaveFailed = !cfg.Save();
-        }
 
         bool launched = Core::WowInstall::LaunchWow(cfg.WowPath, cfg.RealmAddress);
         if (!launched)
         {
-            StatusTextBlock().Text(L"Failed to launch WoW - check your install path in Settings");
-            StatusTextBlock().Visibility(Visibility::Visible);
+            ShowError(L"Failed to launch WoW - check the install path below");
             co_return;
         }
 
         if (configSaveFailed)
-        {
-            StatusTextBlock().Text(L"Failed to save settings");
-            StatusTextBlock().Visibility(Visibility::Visible);
-        }
+            ShowError(L"Failed to save settings");
         else
-        {
             StatusTextBlock().Visibility(Visibility::Collapsed);
-        }
 
         // Prefer the credentials just typed into the form this session; only
         // fall back to whatever's in the vault if the password field was
@@ -181,9 +184,94 @@ namespace winrt::AzerothCore::Pages::implementation
         {
             queue.TryEnqueue([this, lifetime]()
                 {
-                    StatusTextBlock().Text(L"Not signed in - credentials not saved");
-                    StatusTextBlock().Visibility(Visibility::Visible);
+                    ShowError(L"Not signed in - credentials not saved");
                 });
         }
+    }
+
+    winrt::fire_and_forget HomePage::BrowseButton_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        auto lifetime = get_strong();
+
+        // File picker requires the window handle, obtained via WinRT interop.
+        auto picker = winrt::Windows::Storage::Pickers::FileOpenPicker();
+        picker.FileTypeFilter().Append(L".exe");
+        auto initializeWithWindow = picker.as<::IInitializeWithWindow>();
+        HWND hwnd = GetActiveWindow();
+        initializeWithWindow->Initialize(hwnd);
+
+        auto file = co_await picker.PickSingleFileAsync();
+        if (!file)
+            co_return;
+
+        std::wstring path = file.Path().c_str();
+        bool valid = Core::WowInstall::IsValidWowExe(path);
+
+        auto cfg = Core::RealmConfig::Load();
+        bool saved = false;
+        if (valid)
+        {
+            cfg.WowPath = path;
+            saved = cfg.Save();
+        }
+
+        DispatcherQueue().TryEnqueue([this, lifetime, path, valid, saved]()
+            {
+                if (!valid)
+                {
+                    // Silently ignoring the pick left the user staring at an
+                    // unchanged path box with no idea the file was rejected.
+                    ShowError(L"That isn't a 3.3.5a Wow.exe - pick the Wow.exe in your client folder");
+                    return;
+                }
+
+                WowPathBox().Text(path);
+                if (saved)
+                    StatusTextBlock().Visibility(Visibility::Collapsed);
+                else
+                    ShowError(L"Failed to save settings");
+            });
+    }
+
+    void HomePage::RealmAddressBox_TextChanged(IInspectable const&, Controls::TextChangedEventArgs const&)
+    {
+        if (m_loading)
+            return;
+
+        auto cfg = Core::RealmConfig::Load();
+        cfg.RealmAddress = RealmAddressBox().Text().c_str();
+        if (cfg.Save())
+            StatusTextBlock().Visibility(Visibility::Collapsed);
+        else
+            ShowError(L"Failed to save settings");
+
+        // The status line above the fields is now the only place the realm's
+        // reachability is reported, so re-check as soon as the address the
+        // check depends on changes.
+        CheckRealmStatusAsync();
+    }
+
+    // With Settings folded into this page, this checkbox is the only affordance
+    // for the stored credential -- the old SettingsPage had a separate explicit
+    // "clear" path. Unchecking it therefore wipes the stored credential outright
+    // rather than merely declining to use it: a control labelled "Remember me",
+    // unchecked, that quietly leaves an encrypted password on disk is not
+    // telling the truth about what it does.
+    void HomePage::RememberMeCheckBox_Changed(IInspectable const&, RoutedEventArgs const&)
+    {
+        if (m_loading)
+            return;
+
+        bool enabled = RememberMeCheckBox().IsChecked().GetBoolean();
+
+        auto cfg = Core::RealmConfig::Load();
+        cfg.CredentialVaultEnabled = enabled;
+        if (cfg.Save())
+            StatusTextBlock().Visibility(Visibility::Collapsed);
+        else
+            ShowError(L"Failed to save settings");
+
+        if (!enabled)
+            Core::CredentialVault::Clear();
     }
 }

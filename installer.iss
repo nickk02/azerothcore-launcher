@@ -57,6 +57,13 @@ Name: "{group}\Client Folder"; Filename: "{app}\Client"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\App\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; The Client folder opens first, deliberately. Installing this and then being
+; dropped straight into the launcher with no client is the one confusing moment
+; in the whole flow -- nothing on screen says a client is needed or where to
+; put it. Opening the empty folder (which contains the README written in
+; CurStepChanged) makes the next step self-evident. Both entries are ticked by
+; default, so the normal finish is: folder opens, launcher opens behind it.
+Filename: "{app}\Client"; Description: "Open the Client folder"; Flags: shellexec postinstall skipifsilent
 Filename: "{app}\App\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -174,6 +181,20 @@ begin
   end;
 end;
 
+// Replaces Inno's stock "Setup has finished installing" text with the one
+// instruction that actually matters. The stock message is built into
+// [Messages], where {app} is not expanded, so it has to be set here at the
+// point the finish page is shown.
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpFinished then
+    WizardForm.FinishedLabel.Caption :=
+      ExpandConstant('{#MyAppName} is installed, but it has no game client yet.') + #13#10 + #13#10 +
+      ExpandConstant('Copy your own, legally-obtained WotLK 3.3.5a client files into:') + #13#10 +
+      ExpandConstant('    {app}\Client') + #13#10 + #13#10 +
+      ExpandConstant('Then open {#MyAppName} and use Browse to point it at the Wow.exe in that folder.');
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ReadmePath: string;
@@ -187,7 +208,7 @@ begin
     Lines[1] := '';
     Lines[2] := 'Copy your existing, legally-obtained 3.3.5a client files into this';
     Lines[3] := 'folder (the folder containing Wow.exe), then open AzerothCore and';
-    Lines[4] := 'use Settings to browse to Wow.exe here.';
+    Lines[4] := 'use the Browse button to point it at the Wow.exe in here.';
     Lines[5] := '';
     SaveStringsToFile(ReadmePath, Lines, False);
 
