@@ -3,74 +3,138 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <Page.Resources>
+        <!-- A launcher that never moves reads as a screenshot of an application
+             rather than an application. The hero drifts continuously, and the
+             logo and login box arrive rather than appearing. Both are slow and
+             low-amplitude on purpose: this should register as the page being
+             alive, not as an effect demanding attention. -->
+        <Storyboard x:Key="HeroDrift" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetName="HeroTransform" Storyboard.TargetProperty="ScaleX"
+                             From="1.0" To="1.09" Duration="0:0:26" EnableDependentAnimation="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="HeroTransform" Storyboard.TargetProperty="ScaleY"
+                             From="1.0" To="1.09" Duration="0:0:26" EnableDependentAnimation="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="HeroTransform" Storyboard.TargetProperty="TranslateX"
+                             From="0" To="26" Duration="0:0:26" EnableDependentAnimation="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Key="ContentEntrance">
+            <DoubleAnimation Storyboard.TargetName="LogoImage" Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.5" EnableDependentAnimation="True"/>
+            <DoubleAnimation Storyboard.TargetName="LogoTransform" Storyboard.TargetProperty="TranslateY"
+                             From="-18" To="0" Duration="0:0:0.6" EnableDependentAnimation="True">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="LoginPanel" Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" BeginTime="0:0:0.12" Duration="0:0:0.5"
+                             EnableDependentAnimation="True"/>
+            <DoubleAnimation Storyboard.TargetName="LoginTransform" Storyboard.TargetProperty="TranslateY"
+                             From="22" To="0" BeginTime="0:0:0.12" Duration="0:0:0.6"
+                             EnableDependentAnimation="True">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </Page.Resources>
+
     <!-- RootGrid is clipped to its own bounds in code-behind (WinUI3 panels do
          not clip children, and there is no ClipToBounds). Without that clip the
-         hero image below, which deliberately overhangs the left edge, paints
-         straight over MainWindow's nav rail and hides it. -->
+         hero image, which both overhangs the left edge and scales past its box
+         while drifting, would paint over the shell around it. -->
     <Grid x:Name="RootGrid" SizeChanged="RootGrid_SizeChanged">
-        <!-- The negative left margin does two jobs at once, which is why this is
-             a margin and not a RenderTransform. A transform moves the image
-             after layout, so panning left by 110px left a 110px gap on the
-             right; a negative margin instead makes the layout box 110px wider
-             AND starts it 110px early, so the art still reaches the right edge.
-             The overhang on the left is what RootGrid's clip absorbs. -->
-        <Image Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
+        <Image x:Name="HeroImage" Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-               Margin="-110,0,0,0"/>
+               Margin="-80,0,0,0" RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <CompositeTransform x:Name="HeroTransform"/>
+            </Image.RenderTransform>
+        </Image>
 
-        <Image Source="/Assets/wotlk-logo.png" Height="130"
-               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16,0,0"/>
+        <!-- Two columns so the logo centres on the art rather than on the whole
+             page. Centred across the full width it collided with the login box,
+             putting the panel on top of "WARCRAFT". -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
 
-        <StackPanel Width="240" HorizontalAlignment="Right" VerticalAlignment="Center"
-                    Margin="0,0,26,0" Spacing="12">
-            <Border Padding="16" CornerRadius="4"
-                    Background="#CC0A0A0A" BorderBrush="#CBB98A" BorderThickness="1">
-                <StackPanel Spacing="12">
-                    <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
-                               Foreground="#CBB98A" FontSize="11" HorizontalAlignment="Center"/>
+            <Image x:Name="LogoImage" Grid.Column="0" Source="/Assets/wotlk-logo.png" Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" Opacity="0"
+                   RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <CompositeTransform x:Name="LogoTransform"/>
+                </Image.RenderTransform>
+            </Image>
 
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                        <TextBox x:Name="AccountNameBox" Background="#141414" Foreground="#DCE4F2"
-                                 BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
-                    </StackPanel>
+            <StackPanel x:Name="LoginPanel" Grid.Column="1" Width="252"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Opacity="0">
+                <StackPanel.RenderTransform>
+                    <CompositeTransform x:Name="LoginTransform"/>
+                </StackPanel.RenderTransform>
 
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                        <PasswordBox x:Name="PasswordBox" Background="#141414" Foreground="#DCE4F2"
+                <Border Padding="16" CornerRadius="4"
+                        Background="#D90A0A0A" BorderBrush="#CBB98A" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
+                                   Foreground="#CBB98A" FontSize="11" HorizontalAlignment="Center"/>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                            <TextBox x:Name="AccountNameBox" Background="#141414" Foreground="#DCE4F2"
                                      BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                            <PasswordBox x:Name="PasswordBox" Background="#141414" Foreground="#DCE4F2"
+                                         BorderBrush="#CBB98A" BorderThickness="1" Padding="8,6"/>
+                        </StackPanel>
+
+                        <CheckBox x:Name="RememberMeCheckBox" Content="Remember me" Foreground="#DCE4F2"/>
                     </StackPanel>
+                </Border>
 
-                    <CheckBox x:Name="RememberMeCheckBox" Content="Remember me" Foreground="#DCE4F2"/>
-                </StackPanel>
-            </Border>
+                <!-- State brushes are overridden as resources rather than by
+                     setting Background/Foreground directly, because the default
+                     template swaps those out on hover and press and would undo a
+                     plain property set. -->
+                <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Padding="0,12" FontSize="16" FontWeight="SemiBold">
+                    <Button.Resources>
+                        <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A89768"/>
+                        <SolidColorBrush x:Key="ButtonForeground" Color="#0A0A0A"/>
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#0A0A0A"/>
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#0A0A0A"/>
+                        <SolidColorBrush x:Key="ButtonBorderBrush" Color="#F0C860"/>
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#F0C860"/>
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
+                    </Button.Resources>
+                </Button>
 
-            <!-- Play is the primary action on this page and sits on a dark hero
-                 image, where the default Button styling is nearly invisible.
-                 The state brushes are overridden as resources rather than by
-                 setting Background/Foreground directly, because the default
-                 template swaps those out on hover and press and would undo a
-                 plain property set. Colours are the palette already used by the
-                 login border (#CBB98A) and the active nav item (#F0C860). -->
-            <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
-                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                    Padding="0,10" FontSize="15" FontWeight="SemiBold">
-                <Button.Resources>
-                    <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
-                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
-                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A89768"/>
-                    <SolidColorBrush x:Key="ButtonForeground" Color="#0A0A0A"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#0A0A0A"/>
-                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#0A0A0A"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#F0C860"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#F0C860"/>
-                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#CBB98A"/>
-                </Button.Resources>
-            </Button>
-
-            <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
-                       FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap"
-                       TextAlignment="Center" Visibility="Collapsed"/>
-        </StackPanel>
+                <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#88DCE4F2"
+                           FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap"
+                           TextAlignment="Center" Visibility="Collapsed"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

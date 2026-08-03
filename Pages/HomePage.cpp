@@ -26,6 +26,26 @@ namespace winrt::AzerothCore::Pages::implementation
         // back into a visible UI control automatically.
         if (auto cred = Core::CredentialVault::TryGet())
             AccountNameBox().Text(cred->AccountName);
+
+        // Storyboards defined in Page.Resources have to be started from here:
+        // WinUI3 XAML has no EventTrigger/BeginStoryboard, so there is no
+        // declarative way to run them on load.
+        Loaded([this](auto&&, auto&&)
+            {
+                StartAnimation(L"HeroDrift");
+                StartAnimation(L"ContentEntrance");
+            });
+    }
+
+    void HomePage::StartAnimation(std::wstring_view key)
+    {
+        auto resources = Resources();
+        auto boxedKey = box_value(hstring{ key });
+        if (!resources.HasKey(boxedKey))
+            return;
+
+        if (auto storyboard = resources.Lookup(boxedKey).try_as<Media::Animation::Storyboard>())
+            storyboard.Begin();
     }
 
     // WinUI3 panels do not clip their children to their own bounds, and there is

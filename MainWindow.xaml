@@ -6,43 +6,59 @@
 
     <Grid x:Name="RootGrid" Background="#0A0A0A">
         <Grid.RowDefinitions>
-            <RowDefinition Height="32"/>
+            <RowDefinition Height="44"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="#141414">
-            <TextBlock Text="AzerothCore" Foreground="#DCE4F2" FontSize="12"
-                       VerticalAlignment="Center" Margin="12,0,0,0"/>
-        </Grid>
-
-        <Grid Grid.Row="1">
+        <!-- Navigation lives in the title bar now: the old 76px left rail cost
+             horizontal space the hero art wanted and gave nothing back for it.
+             Only DragRegion is passed to SetTitleBar(); if the whole bar were the
+             drag region it would swallow clicks on the nav items. -->
+        <Grid Grid.Row="0" Background="#141414">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="76"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="#141414" BorderBrush="#242424" BorderThickness="0,0,1,0">
-                <StackPanel Spacing="4" Padding="0,24,0,0" HorizontalAlignment="Stretch">
-                    <Border Tapped="NavHome_Tapped" Background="Transparent" Padding="0,14">
-                        <TextBlock x:Name="NavHome" Text="HOME" FontSize="12" Foreground="#F0C860"
-                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </Border>
-                    <Border Tapped="NavAddons_Tapped" Background="Transparent" Padding="0,14">
-                        <TextBlock x:Name="NavAddons" Text="ADDONS" FontSize="12" Foreground="#B8DCE4F2"
-                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </Border>
-                    <Border Tapped="NavCharacters_Tapped" Background="Transparent" Padding="0,14">
-                        <TextBlock x:Name="NavCharacters" Text="CHARS" FontSize="12" Foreground="#B8DCE4F2"
-                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </Border>
-                    <Border Tapped="NavSettings_Tapped" Background="Transparent" Padding="0,14">
-                        <TextBlock x:Name="NavSettings" Text="SETTINGS" FontSize="12" Foreground="#B8DCE4F2"
-                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                    </Border>
-                </StackPanel>
+            <Border x:Name="DragRegion" Grid.Column="0" Background="Transparent" Padding="14,0,20,0">
+                <TextBlock Text="AZEROTHCORE" Foreground="#CBB98A" FontSize="12"
+                           FontWeight="SemiBold" VerticalAlignment="Center"/>
             </Border>
 
-            <Frame x:Name="ContentFrame" Grid.Column="1"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <Border x:Name="NavHomeItem" Tapped="NavHome_Tapped" Background="Transparent"
+                        Padding="16,0" Height="44">
+                    <Grid>
+                        <TextBlock x:Name="NavHome" Text="HOME" FontSize="12" Foreground="#F0C860"
+                                   VerticalAlignment="Center"/>
+                        <Rectangle x:Name="NavHomeUnderline" Height="2" Fill="#F0C860" Opacity="1"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="NavAddonsItem" Tapped="NavAddons_Tapped" Background="Transparent"
+                        Padding="16,0" Height="44">
+                    <Grid>
+                        <TextBlock x:Name="NavAddons" Text="ADDONS" FontSize="12" Foreground="#B8DCE4F2"
+                                   VerticalAlignment="Center"/>
+                        <Rectangle x:Name="NavAddonsUnderline" Height="2" Fill="#F0C860" Opacity="0"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="NavSettingsItem" Tapped="NavSettings_Tapped" Background="Transparent"
+                        Padding="16,0" Height="44">
+                    <Grid>
+                        <TextBlock x:Name="NavSettings" Text="SETTINGS" FontSize="12" Foreground="#B8DCE4F2"
+                                   VerticalAlignment="Center"/>
+                        <Rectangle x:Name="NavSettingsUnderline" Height="2" Fill="#F0C860" Opacity="0"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
         </Grid>
+
+        <Frame x:Name="ContentFrame" Grid.Row="1"/>
     </Grid>
 </Window>

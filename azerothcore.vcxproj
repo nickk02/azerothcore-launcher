@@ -119,9 +119,6 @@
     <ClCompile Include="Pages\AddonsPage.cpp">
       <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Pages\CharactersPage.cpp">
-      <DependentUpon>Pages\CharactersPage.xaml</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pages\SettingsPage.cpp">
       <DependentUpon>Pages\SettingsPage.xaml</DependentUpon>
     </ClCompile>
@@ -149,9 +146,6 @@
     <ClInclude Include="Pages\AddonsPage.h">
       <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Pages\CharactersPage.h">
-      <DependentUpon>Pages\CharactersPage.xaml</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pages\SettingsPage.h">
       <DependentUpon>Pages\SettingsPage.xaml</DependentUpon>
     </ClInclude>
@@ -164,8 +158,6 @@
     <Midl Include="Pages\HomePage.idl" />
     <Page Include="Pages\AddonsPage.xaml" />
     <Midl Include="Pages\AddonsPage.idl" />
-    <Page Include="Pages\CharactersPage.xaml" />
-    <Midl Include="Pages\CharactersPage.idl" />
     <Page Include="Pages\SettingsPage.xaml" />
     <Midl Include="Pages\SettingsPage.idl" />
   </ItemGroup>
