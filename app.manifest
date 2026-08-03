@@ -7,6 +7,27 @@
       </requestedPrivileges>
     </security>
   </trustInfo>
+  <!-- Without this the process runs DPI-unaware: GetDpiForWindow reports 96 on
+       a 200% display, Windows renders the whole app into a 1100x720 surface and
+       bitmap-stretches it to 2200x1440. Everything is soft, and the hero art is
+       hit worst, because a 2400px-wide source is first sampled down to ~1180
+       real pixels and then blown back up 2x.
+
+       Only the 2016 dpiAwareness element is declared. The legacy dpiAware
+       element exists for loaders predating Windows 10 1703, which the Windows
+       App SDK does not run on anyway, so it would be dead weight here.
+
+       Verified at runtime rather than assumed: AreDpiAwarenessContextsEqual
+       against DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 returns true, and
+       GetDpiForWindow reports 192 on the 200% display. Note that the plain
+       DPI_AWARENESS enum cannot confirm this on its own: it has no V2 member,
+       so GetAwarenessFromDpiAwarenessContext reports PER_MONITOR_AWARE for a
+       V2 context and looks like a downgrade when it is not. -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
