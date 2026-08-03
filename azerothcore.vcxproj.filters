@@ -19,8 +19,6 @@
     <ClCompile Include="Core\ArmoryClient.cpp"><Filter>Core</Filter></ClCompile>
     <ClCompile Include="Pages\HomePage.cpp"><Filter>Pages</Filter></ClCompile>
     <ClCompile Include="Pages\AddonsPage.cpp"><Filter>Pages</Filter></ClCompile>
-    <ClCompile Include="Pages\CharactersPage.cpp"><Filter>Pages</Filter></ClCompile>
-    <ClCompile Include="Pages\SettingsPage.cpp"><Filter>Pages</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h"><Filter>Header Files</Filter></ClInclude>
@@ -37,22 +35,16 @@
     <ClInclude Include="Core\ArmoryClient.h"><Filter>Core</Filter></ClInclude>
     <ClInclude Include="Pages\HomePage.h"><Filter>Pages</Filter></ClInclude>
     <ClInclude Include="Pages\AddonsPage.h"><Filter>Pages</Filter></ClInclude>
-    <ClInclude Include="Pages\CharactersPage.h"><Filter>Pages</Filter></ClInclude>
-    <ClInclude Include="Pages\SettingsPage.h"><Filter>Pages</Filter></ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml" />
     <Page Include="MainWindow.xaml" />
     <Page Include="Pages\HomePage.xaml"><Filter>Pages</Filter></Page>
     <Page Include="Pages\AddonsPage.xaml"><Filter>Pages</Filter></Page>
-    <Page Include="Pages\CharactersPage.xaml"><Filter>Pages</Filter></Page>
-    <Page Include="Pages\SettingsPage.xaml"><Filter>Pages</Filter></Page>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="MainWindow.idl" />
     <Midl Include="Pages\HomePage.idl"><Filter>Pages</Filter></Midl>
     <Midl Include="Pages\AddonsPage.idl"><Filter>Pages</Filter></Midl>
-    <Midl Include="Pages\CharactersPage.idl"><Filter>Pages</Filter></Midl>
-    <Midl Include="Pages\SettingsPage.idl"><Filter>Pages</Filter></Midl>
   </ItemGroup>
 </Project>

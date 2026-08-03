@@ -1,0 +1,27 @@
+# The app is a C++/WinRT project whose real dependencies are the NuGet packages
+# restored into packages\ from packages.config: the Windows App SDK, WinUI,
+# WebView2 and the C++/WinRT build tooling. Those are the versions that go
+# stale and that carry security fixes, so nuget is the only ecosystem worth
+# watching here.
+#
+# Grouped into a single PR because the WindowsAppSDK packages
+# (Foundation, WinUI, InteractiveExperiences) are version-locked against each
+# other -- bumping one alone produces a build that does not link.
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      windows-app-sdk:
+        patterns:
+          - "Microsoft.WindowsAppSDK*"
+          - "Microsoft.Windows.SDK*"
+          - "Microsoft.Windows.CppWinRT"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
