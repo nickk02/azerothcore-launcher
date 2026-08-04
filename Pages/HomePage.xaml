@@ -130,54 +130,41 @@
 
         <!-- The wash spans the whole window rather than sitting inside the
              field column, which is what lets the fade be wider than the fields
-             are. It runs clear until 35.5% and is fully opaque by 52%. The
-             opaque edge is the panel boundary and does not move; only where
-             the transition begins does, which is why these are separate stops
-             rather than one width. The art itself is never resized; only what
-             is laid over it changes. -->
+             are.
+
+             It is a scrim, not a backdrop: it tops out at 72% black and holds
+             there, so the art carries all the way to the right edge and is
+             merely dimmed behind the fields rather than replaced by them. At
+             the near-opaque value this used to end on, the right third was
+             flatly black and the panel read as a separate box bolted onto the
+             art instead of as part of the same image. 72% is enough for
+             #DCE4F2 text over the darkest part of the hero and still leaves
+             the cape and pillars visible through it. -->
         <Rectangle x:Name="ArtWash">
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Offset="0.00" Color="#000A0A0A"/>
-                    <GradientStop Offset="0.355" Color="#000A0A0A"/>
-                    <GradientStop Offset="0.445" Color="#960A0A0A"/>
-                    <GradientStop Offset="0.52" Color="#F70A0A0A"/>
-                    <GradientStop Offset="1.00" Color="#F70A0A0A"/>
+                    <GradientStop Offset="0.00" Color="#00000000"/>
+                    <GradientStop Offset="0.32" Color="#00000000"/>
+                    <GradientStop Offset="0.52" Color="#8A000000"/>
+                    <GradientStop Offset="0.68" Color="#B8000000"/>
+                    <GradientStop Offset="1.00" Color="#B8000000"/>
                 </LinearGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- The logo is centred in a 460px column, deliberately narrower than
-             the 572px art column it sits on. Centred on the art column proper
-             it landed almost exactly over the Lich King's head, and a logo
-             sharing a vertical axis with the figure behind it reads as two
-             things stacked rather than as art with a logo on it. Pulling the
-             centre 56px left breaks that axis. Raising it (top margin 28 to
-             16) opens the gap to the top of the figure at the same time.
-
-             Centring inside a column rather than by a computed offset is what
-             keeps position independent of size: the logo can be rescaled again
-             without the placement quietly going wrong. The window cannot be
-             resized, so literal widths are honest here in a way they would not
-             be in a fluid layout. -->
-        <!-- Two grids rather than one three-column grid: the wash boundary and
-             the field column (372 from the right) are independent numbers, and
-             forcing them into shared columns would tie the fade to the field
-             width, which is the coupling this change removed. -->
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="460"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Image x:Name="LogoImage" Grid.Column="0" Source="/Assets/wotlk-logo.png" Height="140"
-                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16,0,0" Opacity="0"
-                   RenderTransformOrigin="0.5,0.5">
-                <Image.RenderTransform>
-                    <CompositeTransform x:Name="LogoTransform"/>
-                </Image.RenderTransform>
-            </Image>
-        </Grid>
+        <!-- The logo centres on the page, not on a column. Earlier revisions
+             centred it on the art left of the wash, which only made sense while
+             the wash ended opaque and genuinely cut the art off there. Now that
+             the wash only dims, the whole width is still one image, so the page
+             centre is the real centre. At 280px wide it ends around x=690 and
+             still clears the fields, which begin at 728. -->
+        <Image x:Name="LogoImage" Source="/Assets/wotlk-logo.png" Height="140"
+               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
+               RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <CompositeTransform x:Name="LogoTransform"/>
+            </Image.RenderTransform>
+        </Image>
 
         <Grid>
             <Grid.ColumnDefinitions>
