@@ -130,49 +130,41 @@
 
         <!-- The wash spans the whole window rather than sitting inside the
              field column, which is what lets the fade be wider than the fields
-             are. It runs clear until 28% and is fully opaque by 52%, so the
-             transition is about a quarter of the window wide: at the old width
-             (a fifth of a 372px column, ~74px) the fade was short enough to
-             read as a vertical line with a soft edge rather than as the art
-             falling away into the logon area. The art itself is never resized;
-             only what is laid over it changes. -->
+             are.
+
+             It is a scrim, not a backdrop: it tops out at 72% black and holds
+             there, so the art carries all the way to the right edge and is
+             merely dimmed behind the fields rather than replaced by them. At
+             the near-opaque value this used to end on, the right third was
+             flatly black and the panel read as a separate box bolted onto the
+             art instead of as part of the same image. 72% is enough for
+             #DCE4F2 text over the darkest part of the hero and still leaves
+             the cape and pillars visible through it. -->
         <Rectangle x:Name="ArtWash">
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Offset="0.00" Color="#000A0A0A"/>
-                    <GradientStop Offset="0.28" Color="#000A0A0A"/>
-                    <GradientStop Offset="0.40" Color="#960A0A0A"/>
-                    <GradientStop Offset="0.52" Color="#F70A0A0A"/>
-                    <GradientStop Offset="1.00" Color="#F70A0A0A"/>
+                    <GradientStop Offset="0.00" Color="#00000000"/>
+                    <GradientStop Offset="0.32" Color="#00000000"/>
+                    <GradientStop Offset="0.52" Color="#8A000000"/>
+                    <GradientStop Offset="0.68" Color="#B8000000"/>
+                    <GradientStop Offset="1.00" Color="#B8000000"/>
                 </LinearGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- The logo centres on the art column, which is everything left of
-             the point the wash goes opaque: 52% of the fixed 1100px window,
-             so 572. Centring inside a column of that exact width rather than
-             setting a margin means the logo stays centred if its size changes;
-             a hand-computed offset silently goes wrong the moment the art is
-             rescaled. The window cannot be resized, so a literal 572 is honest
-             here in a way it would not be in a fluid layout. -->
-        <!-- Two grids rather than one three-column grid: the wash boundary
-             (572) and the field column (372 from the right) are independent
-             numbers, and forcing them into shared columns would tie the fade
-             to the field width, which is the coupling this change removes. -->
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="572"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Image x:Name="LogoImage" Grid.Column="0" Source="/Assets/wotlk-logo.png" Height="140"
-                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
-                   RenderTransformOrigin="0.5,0.5">
-                <Image.RenderTransform>
-                    <CompositeTransform x:Name="LogoTransform"/>
-                </Image.RenderTransform>
-            </Image>
-        </Grid>
+        <!-- The logo centres on the page, not on a column. Earlier revisions
+             centred it on the art left of the wash, which only made sense while
+             the wash ended opaque and genuinely cut the art off there. Now that
+             the wash only dims, the whole width is still one image, so the page
+             centre is the real centre. At 280px wide it ends around x=690 and
+             still clears the fields, which begin at 728. -->
+        <Image x:Name="LogoImage" Source="/Assets/wotlk-logo.png" Height="140"
+               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
+               RenderTransformOrigin="0.5,0.5">
+            <Image.RenderTransform>
+                <CompositeTransform x:Name="LogoTransform"/>
+            </Image.RenderTransform>
+        </Image>
 
         <Grid>
             <Grid.ColumnDefinitions>
@@ -194,15 +186,15 @@
                     <StackPanel Grid.Row="0" VerticalAlignment="Center" Spacing="14">
 
                         <TextBlock x:Name="RealmStatusTextBlock" Text="No realm configured"
-                                   Foreground="#CBB98A" FontSize="11" FontWeight="SemiBold"/>
+                                   Foreground="#CBB98A" FontSize="13" FontWeight="SemiBold"/>
 
                         <StackPanel Spacing="4">
-                            <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                            <TextBlock Text="ACCOUNT NAME" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
                             <TextBox x:Name="AccountNameBox" Padding="8,6"/>
                         </StackPanel>
 
                         <StackPanel Spacing="4">
-                            <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                            <TextBlock Text="PASSWORD" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
                             <PasswordBox x:Name="PasswordBox" Padding="8,6"/>
                         </StackPanel>
 
@@ -211,7 +203,7 @@
 
                         <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click"
                                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                Padding="0,12" FontSize="16" FontWeight="SemiBold" CornerRadius="3">
+                                Padding="0,12" FontSize="18" FontWeight="SemiBold" CornerRadius="3">
                             <Button.Resources>
                                 <SolidColorBrush x:Key="ButtonBackground" Color="#CBB98A"/>
                                 <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#F0C860"/>
@@ -229,7 +221,7 @@
                         </Button>
 
                         <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#FF9B9B"
-                                   FontSize="11" TextWrapping="Wrap" Visibility="Collapsed"/>
+                                   FontSize="12" TextWrapping="Wrap" Visibility="Collapsed"/>
 
                         <!-- Setup lives on this page rather than behind a tab.
                              There are four fields in the whole application; a
@@ -244,20 +236,20 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="SETUP" Foreground="#88CBB98A"
-                                           FontSize="10" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                           FontSize="11" FontWeight="SemiBold" Margin="0,0,10,0"/>
                                 <Rectangle Grid.Column="1" Height="1" Fill="#33CBB98A"
                                            VerticalAlignment="Center"/>
                             </Grid>
 
                             <StackPanel Spacing="4">
-                                <TextBlock Text="WOW INSTALL" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
+                                <TextBlock Text="WOW INSTALL" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="WowPathBox" Grid.Column="0" IsReadOnly="True"
-                                             Padding="8,6" FontSize="12"
+                                             Padding="8,6" FontSize="14"
                                              PlaceholderText="Not set"/>
                                     <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse"
                                             Click="BrowseButton_Click" Padding="12,6" CornerRadius="3">
@@ -282,8 +274,8 @@
                             </StackPanel>
 
                             <StackPanel Spacing="4">
-                                <TextBlock Text="REALM ADDRESS" Foreground="#CBB98A" FontSize="10" FontWeight="SemiBold"/>
-                                <TextBox x:Name="RealmAddressBox" Padding="8,6" FontSize="12"
+                                <TextBlock Text="REALM ADDRESS" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBox x:Name="RealmAddressBox" Padding="8,6" FontSize="14"
                                          PlaceholderText="e.g. 10.0.0.85"
                                          TextChanged="RealmAddressBox_TextChanged"/>
                             </StackPanel>
@@ -291,7 +283,7 @@
                     </StackPanel>
 
                     <TextBlock x:Name="VersionTextBlock" Grid.Row="1" Text=""
-                               Foreground="#66DCE4F2" FontSize="10" Margin="0,0,0,16"/>
+                               Foreground="#66DCE4F2" FontSize="11" Margin="0,0,0,16"/>
                 </Grid>
             </Border>
         </Grid>
