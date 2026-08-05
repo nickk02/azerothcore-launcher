@@ -64,7 +64,33 @@ namespace winrt::AzerothCore::implementation
     void MainWindow::SetupFixedWindow()
     {
         auto appWindow = this->AppWindow();
-        appWindow.Resize({ kWindowWidth, kWindowHeight });
+
+        // AppWindow sizes are raw physical pixels, but kWindowWidth/Height are
+        // the logical size the XAML layout is built against, so they have to be
+        // scaled by the display's DPI. This was invisible while the process was
+        // DPI-unaware: the OS virtualized 1100 physical up to 2200 on a 200%
+        // display and the window happened to land at the right on-screen size.
+        // With PerMonitorV2 declared in app.manifest there is no virtualization
+        // any more, and an unscaled Resize would produce a half-size window.
+        //
+        // The DPI is read once, for the display the window opened on. The window
+        // is fixed and centred at startup, so the only way to invalidate this is
+        // to drag it to a monitor with different scaling; WinUI rescales the
+        // content in that case but the frame would keep this physical size.
+        // Not handled, because the window cannot be resized and nothing else in
+        // the app reacts to a DPI change either.
+        HWND hwnd{};
+        double scale = 1.0;
+        if (auto native = this->try_as<::IWindowNative>();
+            native && SUCCEEDED(native->get_WindowHandle(&hwnd)) && hwnd)
+        {
+            if (UINT dpi = GetDpiForWindow(hwnd); dpi != 0)
+                scale = dpi / 96.0;
+        }
+
+        const int32_t width = static_cast<int32_t>(kWindowWidth * scale);
+        const int32_t height = static_cast<int32_t>(kWindowHeight * scale);
+        appWindow.Resize({ width, height });
 
         if (auto presenter = appWindow.Presenter().try_as<Microsoft::UI::Windowing::OverlappedPresenter>())
         {
@@ -78,8 +104,8 @@ namespace winrt::AzerothCore::implementation
         if (area)
         {
             auto work = area.WorkArea();
-            appWindow.Move({ work.X + (work.Width - kWindowWidth) / 2,
-                             work.Y + (work.Height - kWindowHeight) / 2 });
+            appWindow.Move({ work.X + (work.Width - width) / 2,
+                             work.Y + (work.Height - height) / 2 });
         }
     }
 }
