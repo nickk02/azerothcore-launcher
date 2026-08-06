@@ -1,0 +1,39 @@
+# Normalise line endings so the repo does not churn between machines and so
+# `git diff` stops reporting whole-file rewrites after a tool touches a file.
+* text=auto
+
+# Windows-native build inputs. MSBuild and rc.exe cope with LF, but Visual
+# Studio rewrites these to CRLF the moment anyone opens them, which produces
+# noisy diffs that hide the real change.
+*.vcxproj      text eol=crlf
+*.filters      text eol=crlf
+*.props        text eol=crlf
+*.targets      text eol=crlf
+*.slnx         text eol=crlf
+*.sln          text eol=crlf
+*.rc           text eol=crlf
+*.manifest     text eol=crlf
+*.appxmanifest text eol=crlf
+
+# Inno Setup reads this with a Windows toolchain; keep it CRLF for the same
+# reason, and because its [Code] section is Pascal that people edit in the IDE.
+*.iss          text eol=crlf
+
+# Source and markup are fine as LF in the repo; autocrlf handles checkout.
+*.cpp  text
+*.h    text
+*.idl  text
+*.xaml text
+*.md   text
+*.yml  text
+*.ps1  text eol=crlf
+
+# Binary assets: never diffed, never line-ending converted. The wotlk-* art is
+# gitignored, but the entries stay so that anything that does land here is
+# treated correctly rather than corrupted by normalisation.
+*.png binary
+*.ico binary
+*.exe binary
+*.pri binary
+*.xbf binary
+*.winmd binary
