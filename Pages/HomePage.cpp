@@ -36,7 +36,7 @@ namespace winrt::AzerothCore::Pages::implementation
         // derives its version from the build date automatically; this is a
         // known simplification until the app version is generated the same
         // way at build time.
-        VersionTextBlock().Text(L"AzerothCore v2026.08.03");
+        VersionTextBlock().Text(L"AzerothCore v2026.08.06");
 
         m_loading = false;
 
