@@ -26,14 +26,13 @@ namespace winrt::AzerothCore::Pages::implementation
         RealmAddressBox().Text(cfg.RealmAddress);
         RememberMeCheckBox().IsChecked(cfg.CredentialVaultEnabled);
 
-        // Pre-fill the account name from a previously stored credential, but
-        // never the password -- a decrypted password must never be surfaced
-        // back into a visible UI control automatically.
+        // Fill in the account name from a stored credential. Never fill in the
+        // password. Do not put a decrypted password into a visible control.
         if (auto cred = Core::CredentialVault::TryGet())
             AccountNameBox().Text(cred->AccountName);
 
-        // Read from the executable's own version resource, which is stamped
-        // from the release tag at build time. Nothing to remember to bump.
+        // Read the version from this executable's own resource. The build
+        // writes it there from the release tag.
         VersionTextBlock().Text(L"AzerothCore v" + hstring{ Core::AppVersion::Current() });
 
         m_loading = false;
@@ -217,8 +216,8 @@ namespace winrt::AzerothCore::Pages::implementation
             {
                 if (!valid)
                 {
-                    // Silently ignoring the pick left the user staring at an
-                    // unchanged path box with no idea the file was rejected.
+                    // Report the rejection. Returning without a message left the
+                    // path box unchanged and gave the user no reason.
                     ShowError(L"That isn't a 3.3.5a Wow.exe - pick the Wow.exe in your client folder");
                     return;
                 }
@@ -249,12 +248,10 @@ namespace winrt::AzerothCore::Pages::implementation
         CheckRealmStatusAsync();
     }
 
-    // With Settings folded into this page, this checkbox is the only affordance
-    // for the stored credential -- the old SettingsPage had a separate explicit
-    // "clear" path. Unchecking it therefore wipes the stored credential outright
-    // rather than merely declining to use it: a control labelled "Remember me",
-    // unchecked, that quietly leaves an encrypted password on disk is not
-    // telling the truth about what it does.
+    // This checkbox is the only control for the stored credential. SettingsPage
+    // had a separate clear button, and that page is gone. Unchecking therefore
+    // deletes the credential. A checkbox marked "Remember me", unchecked, must
+    // not leave an encrypted password on disk.
     void HomePage::RememberMeCheckBox_Changed(IInspectable const&, RoutedEventArgs const&)
     {
         if (m_loading)

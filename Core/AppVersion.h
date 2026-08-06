@@ -3,16 +3,15 @@
 
 namespace Core
 {
-    // The running executable's own version, read from its VERSIONINFO resource
-    // (see app.rc), which is stamped from the release tag at build time.
+    // Returns this executable's version, read from its VERSIONINFO resource.
+    // See app.rc. The build writes that resource from the release tag.
     //
-    // This exists so the version lives in exactly one place. It used to be a
-    // hardcoded wide string in the UI that had to be edited by hand on every
-    // release, next to a comment admitting as much; the installer meanwhile
-    // derived its own version separately, so the two could and did disagree.
+    // The version therefore has one source. It used to be a hardcoded string in
+    // the user interface, and the installer took its version from the build date
+    // separately. The two could disagree, and they did.
     //
-    // An untagged local build reports "0.0.0-dev", which is the honest answer
-    // rather than a version number that looks like a release.
+    // An untagged build reports "0.0.0-dev". It must not report a version that
+    // looks like a release.
     struct AppVersion
     {
         // e.g. "2026.08.06", or "0.0.0-dev" for an untagged build.
