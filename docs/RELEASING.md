@@ -15,38 +15,20 @@ Tags must be `vMAJOR.MINOR.PATCH`. The workflow rejects anything else rather
 than producing an installer with a malformed version, since `VERSIONINFO`
 cannot represent one.
 
-## The one thing that is not automatic
+## Artwork
 
-**A CI-built installer contains no Blizzard artwork.**
+The UI art is tracked in the repository, so a CI build from a tag produces the
+complete product. There is no manual build-and-upload step, and no difference
+between what CI ships and what a developer builds locally.
 
-`Assets/wotlk-*.png|ico` are gitignored and never committed, so the runner has
-no access to them. The build tolerates that by design: the hero image and logo
-simply do not render, and the executable gets the default Windows icon.
+Both workflows fail if any of the four asset files is missing. That check exists
+because the project deliberately tolerates their absence (wildcard content item,
+conditional icon resource), which means a missing asset would otherwise sail
+through the build and only surface when somebody opened the launcher and found
+a blank panel.
 
-So there are two different installers possible from the same commit:
-
-| Built by | Artwork | Use for |
-|---|---|---|
-| CI, from a tag | none | reproducible builds, anything public |
-| A machine with `Assets/` populated | full | what actually looks like the product |
-
-If a release needs the art, build it locally and upload it over the CI asset:
-
-```
-msbuild azerothcore.vcxproj /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:AcVersion=2026.08.06
-"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=2026.08.06 installer.iss
-gh release upload v2026.08.06 dist\AzerothCoreSetup.exe --clobber
-```
-
-Note `/p:AcVersion` and `/DMyAppVersion` are separate and both matter: the first
-stamps the executable, the second stamps the installer. Passing only one gives
-you a release whose installer and application disagree about what version they
-are. The workflow passes both from the tag; by hand, it is on you.
-
-Also worth being deliberate about: publishing an installer containing that
-artwork on a public repository redistributes it, which is the thing
-`.gitignore` line 1 exists to prevent for the source. That is a judgement call
-each time, not a default.
+Note that publishing the installer redistributes that artwork. That is a settled
+decision here, not an oversight, but it is worth being conscious of.
 
 ## Before tagging
 

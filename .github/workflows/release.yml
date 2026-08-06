@@ -1,12 +1,8 @@
 name: release
 
 # Fires on a version tag and attaches the installer to the matching release.
-#
-# NOTE ON ART: the installer this produces contains no Blizzard artwork,
-# because CI has no access to it (see .gitignore). That is deliberate and it
-# means a CI-built installer is NOT interchangeable with one built locally on a
-# machine that has the assets. If a release needs the art, it has to be built by
-# hand and uploaded by hand. Read docs/RELEASING.md before tagging.
+# The UI art is tracked in the repo, so this produces the complete product and
+# a tagged release needs no manual build step.
 on:
   push:
     tags: ['v*']
@@ -30,6 +26,16 @@ jobs:
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
+
+      # A release with missing art would still build and still install; it just
+      # would not look like the product. Refuse rather than ship that.
+      - name: Verify UI assets are present
+        shell: pwsh
+        run: |
+          $required = 'wotlk-hero.png', 'wotlk-logo.png', 'wotlk-icon.png', 'wotlk-icon.ico'
+          $missing = $required | Where-Object { -not (Test-Path (Join-Path 'Assets' $_)) }
+          if ($missing) { throw "Missing UI assets: $($missing -join ', ')" }
+          Write-Host "All $($required.Count) UI assets present."
 
       - name: Restore NuGet packages
         run: nuget restore azerothcore.slnx

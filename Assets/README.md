@@ -1,18 +1,18 @@
 # Assets
 
-This directory holds Blizzard-owned art assets used by the launcher's UI and
-app icon. They are gitignored (see `.gitignore`) and are never committed or
-redistributed. A fresh clone will not have them.
+Blizzard-owned art used by the launcher's UI and application icon:
 
-Before doing a full build with the real icon and hero art, drop these files
-in locally:
+- `wotlk-hero.png` - the hero image behind the panel
+- `wotlk-logo.png` - the Wrath of the Lich King wordmark
+- `wotlk-icon.png` / `wotlk-icon.ico` - the application icon
 
-- `wotlk-hero.png`
-- `wotlk-icon.png`
-- `wotlk-icon.ico`
-- `wotlk-logo.png`
+These are tracked in the repository. They were previously gitignored under a
+"never redistributed" rule, which stopped being accurate once the installer
+that embeds the very same art began shipping as a public release asset. Keeping
+the sources out only prevented CI from building the real product while changing
+nothing about what was actually published.
 
-Without `wotlk-icon.ico` present, `app.rc`'s resource-compile step is skipped
-(see the `Condition="Exists('Assets\wotlk-icon.ico')"` on the
-`ResourceCompile` item in `azerothcore.vcxproj`), so the project still builds
-cleanly, just without a custom app icon.
+The build still tolerates their absence: `Assets` is a wildcard content item
+and the icon resource is conditional on `wotlk-icon.ico` existing, so removing
+them yields a working but art-free launcher rather than a build error. CI checks
+for them explicitly, because that tolerance would otherwise hide a mistake.

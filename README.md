@@ -32,7 +32,7 @@ to point at `Wow.exe`.
 | `MainWindow.xaml` | The shell: a fixed 1100x720 window and a title bar that is chrome only. |
 | `installer.iss` | Inno Setup script for the installer. |
 | `tools/run-tests.ps1` | Builds and runs the `Core` test suites. |
-| `docs/RELEASING.md` | How a release is cut, and the one manual step it still needs. |
+| `docs/RELEASING.md` | How a release is cut. |
 
 ## Building
 
@@ -45,15 +45,15 @@ msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64
 
 The output is a self-contained deployment in `x64\Release\azerothcore\`.
 
-### The artwork is not in this repository
+### Artwork
 
-`Assets/wotlk-hero.png`, `wotlk-logo.png`, `wotlk-icon.png` and `wotlk-icon.ico`
-are Blizzard-owned and are gitignored, so a fresh clone does not have them. The
-project builds fine without them: `Assets` is a wildcard content item, and the
-icon resource is compiled only when the `.ico` is actually present. You get a
-working launcher with no hero art and the default application icon.
+`Assets/wotlk-*` is Blizzard-owned art used for the hero image, wordmark and
+application icon. It is tracked here, so a clone builds the complete product.
 
-See `Assets/README.md` for the file names to drop in if you have them.
+The build tolerates it being absent anyway (`Assets` is a wildcard content item
+and the icon resource is conditional), which yields a working but art-free
+launcher. CI checks explicitly for the files, since that tolerance would
+otherwise let a missing asset through unnoticed.
 
 ### Versioning
 
@@ -91,9 +91,8 @@ passes `/UNDEBUG` for exactly that reason.
 | `release.yml` | tag `v*` | Builds, tests, compiles the installer with the version taken from the tag, attaches it plus a SHA256 to the release |
 | `felbite-healthcheck.yml` | daily | Checks the addon source is still reachable |
 
-CI builds have no access to the Blizzard art, so a **CI-produced installer
-contains no artwork** and is not interchangeable with one built locally on a
-machine that has the assets. See `docs/RELEASING.md`.
+Both build workflows verify the UI assets are present before compiling, so a
+CI-produced installer is the same product a local build produces.
 
 ## Status
 

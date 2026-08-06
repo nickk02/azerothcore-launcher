@@ -1,8 +1,9 @@
-# Blizzard-owned assets: local use only, never redistributed.
-/Assets/wotlk-hero.png
-/Assets/wotlk-icon.png
-/Assets/wotlk-icon.ico
-/Assets/wotlk-logo.png
+# The Blizzard-owned UI art (Assets/wotlk-*) used to be excluded here on a
+# "never redistributed" rule. That rule stopped matching reality once the
+# installer, which embeds the same art, started being published as a release
+# asset on this public repo: the art was being redistributed either way, and
+# excluding the sources only meant CI could not build the real product.
+# The art is tracked now. See Assets/README.md.
 /Launcher.exe
 /wow-launcher.PNG
 

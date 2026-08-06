@@ -27,21 +27,20 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
 
-      # The Blizzard art (Assets/wotlk-*.png|ico) is gitignored and never
-      # committed, so a CI checkout does not have it. The project is written to
-      # tolerate that: Assets is a wildcard Content item, and app.rc is guarded
-      # by Condition="Exists('Assets\wotlk-icon.ico')". This step only proves the
-      # assumption still holds, so that if someone later hard-references an asset
-      # the failure says "art missing in CI" instead of a confusing MSBuild error.
-      - name: Confirm the build does not require the ungitted art
+      # The UI art is tracked, so CI builds the same product a developer does.
+      # Fail loudly if any of it goes missing rather than silently producing an
+      # art-free build that looks fine until someone launches it: the project
+      # tolerates absent assets by design (wildcard Content item, conditional
+      # icon resource), which is exactly what would hide the mistake.
+      - name: Verify UI assets are present
         shell: pwsh
         run: |
-          $present = Get-ChildItem Assets -Filter 'wotlk-*' -ErrorAction SilentlyContinue
-          if ($present) {
-            Write-Host "::warning::Blizzard art is present in the checkout; it is not supposed to be committed."
-          } else {
-            Write-Host 'No wotlk-* assets present, as expected. Building art-free.'
+          $required = 'wotlk-hero.png', 'wotlk-logo.png', 'wotlk-icon.png', 'wotlk-icon.ico'
+          $missing = $required | Where-Object { -not (Test-Path (Join-Path 'Assets' $_)) }
+          if ($missing) {
+            throw "Missing UI assets: $($missing -join ', '). The build would silently produce an art-free launcher."
           }
+          Write-Host "All $($required.Count) UI assets present."
 
       - name: Restore NuGet packages
         run: nuget restore azerothcore.slnx
