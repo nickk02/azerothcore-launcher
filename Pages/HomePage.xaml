@@ -226,23 +226,17 @@
                         <!-- Setup lives on this page rather than behind a tab.
                              There are four fields in the whole application; a
                              separate destination for two of them was more
-                             navigation than the app has content. The rule is
-                             the grouping: these are configured once and then
-                             ignored, unlike the login fields above. -->
-                        <StackPanel Spacing="10" Margin="0,6,0,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="SETUP" Foreground="#88CBB98A"
-                                           FontSize="11" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                <Rectangle Grid.Column="1" Height="1" Fill="#33CBB98A"
-                                           VerticalAlignment="Center"/>
-                            </Grid>
+                             navigation than the app has content.
 
+                             No section heading: the labels already say what
+                             each field is, and "SETUP" over two self-describing
+                             rows was a caption for something that needed no
+                             caption. Extra top margin carries the grouping
+                             instead, since these are configured once and then
+                             ignored, unlike the login fields above. -->
+                        <StackPanel Spacing="10" Margin="0,14,0,0">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="WOW INSTALL" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBlock Text="WOW INSTALL PATH" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
