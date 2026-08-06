@@ -1,4 +1,8 @@
-#include "pch.h"
+// No pch.h here. Core is meant to stand on its own without the WinUI3
+// projection, and every other file in this directory already does; this one
+// pulled in the precompiled header without using a single thing from it, which
+// made it the only Core source that could not be compiled outside the app
+// project. The vcxproj marks it NotUsing to match its siblings.
 #include "RealmConfig.h"
 #include <fstream>
 #include <sstream>

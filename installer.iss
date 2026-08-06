@@ -1,7 +1,13 @@
 #define MyAppName "AzerothCore"
-; Build-date-derived version, so every real build's installer carries its
-; own distinct, meaningful version with no manual bump required.
-#define MyAppVersion GetDateTimeString('yyyy.mm.dd', '', '')
+; Version comes from the release tag when one is building a tagged release
+; (ISCC /DMyAppVersion=2026.08.06), and falls back to the build date otherwise
+; so a local build still gets a distinct, meaningful version with no manual
+; bump. The ifndef matters: an unconditional #define would silently overwrite
+; the command-line value, and a rebuild of an old tag would be stamped with
+; today's date instead of that tag's.
+#ifndef MyAppVersion
+  #define MyAppVersion GetDateTimeString('yyyy.mm.dd', '', '')
+#endif
 #define MyAppPublisher "AzerothCore"
 #define MyAppExeName "azerothcore.exe"
 
