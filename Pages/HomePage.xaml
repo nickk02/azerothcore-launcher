@@ -276,8 +276,16 @@
                         </StackPanel>
                     </StackPanel>
 
+                    <!-- Bottom right of the panel. Left-aligned it floated in
+                         the middle of the window with nothing under it, which
+                         read as a stray line rather than as a version stamp.
+                         Right and Bottom are both explicit: the row is Auto
+                         height, so without VerticalAlignment the text sits
+                         wherever the row lands rather than on the floor. -->
                     <TextBlock x:Name="VersionTextBlock" Grid.Row="1" Text=""
-                               Foreground="#66DCE4F2" FontSize="11" Margin="0,0,0,16"/>
+                               Foreground="#66DCE4F2" FontSize="11"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="0,0,0,16"/>
                 </Grid>
             </Border>
         </Grid>
