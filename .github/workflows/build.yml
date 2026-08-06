@@ -1,0 +1,65 @@
+name: build
+
+# Every push and PR to main. Until this existed the only thing standing between
+# a broken commit and main was somebody happening to build locally.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push to the same branch makes an in-flight run pointless.
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      # The Blizzard art (Assets/wotlk-*.png|ico) is gitignored and never
+      # committed, so a CI checkout does not have it. The project is written to
+      # tolerate that: Assets is a wildcard Content item, and app.rc is guarded
+      # by Condition="Exists('Assets\wotlk-icon.ico')". This step only proves the
+      # assumption still holds, so that if someone later hard-references an asset
+      # the failure says "art missing in CI" instead of a confusing MSBuild error.
+      - name: Confirm the build does not require the ungitted art
+        shell: pwsh
+        run: |
+          $present = Get-ChildItem Assets -Filter 'wotlk-*' -ErrorAction SilentlyContinue
+          if ($present) {
+            Write-Host "::warning::Blizzard art is present in the checkout; it is not supposed to be committed."
+          } else {
+            Write-Host 'No wotlk-* assets present, as expected. Building art-free.'
+          }
+
+      - name: Restore NuGet packages
+        run: nuget restore azerothcore.slnx
+
+      - name: Build (Release x64)
+        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+
+      # The Core suites are standalone programs with their own main(), built by
+      # this script rather than by the vcxproj. See tools/run-tests.ps1 for why,
+      # and for the NDEBUG trap that would silently neuter every assert.
+      - name: Run Core tests
+        shell: pwsh
+        run: .\tools\run-tests.ps1
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: azerothcore-launcher-x64
+          path: x64/Release/azerothcore/
+          retention-days: 14
+          if-no-files-found: error

@@ -7,6 +7,7 @@
 #include "../Core/RealmStatusChecker.h"
 #include "../Core/WowInstall.h"
 #include "../Core/CredentialVault.h"
+#include "../Core/AppVersion.h"
 #include <winrt/Windows.Storage.Pickers.h>
 #include <ShObjIdl.h>
 
@@ -31,12 +32,9 @@ namespace winrt::AzerothCore::Pages::implementation
         if (auto cred = Core::CredentialVault::TryGet())
             AccountNameBox().Text(cred->AccountName);
 
-        // Not wired to real build-time codegen yet -- update this string on
-        // each dated release. The installer version (installer.iss) already
-        // derives its version from the build date automatically; this is a
-        // known simplification until the app version is generated the same
-        // way at build time.
-        VersionTextBlock().Text(L"AzerothCore v2026.08.06");
+        // Read from the executable's own version resource, which is stamped
+        // from the release tag at build time. Nothing to remember to bump.
+        VersionTextBlock().Text(L"AzerothCore v" + hstring{ Core::AppVersion::Current() });
 
         m_loading = false;
 

@@ -1,0 +1,90 @@
+name: release
+
+# Fires on a version tag and attaches the installer to the matching release.
+#
+# NOTE ON ART: the installer this produces contains no Blizzard artwork,
+# because CI has no access to it (see .gitignore). That is deliberate and it
+# means a CI-built installer is NOT interchangeable with one built locally on a
+# machine that has the assets. If a release needs the art, it has to be built by
+# hand and uploaded by hand. Read docs/RELEASING.md before tagging.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and attach to'
+        required: true
+
+permissions:
+  contents: write   # needed to upload the asset onto the release
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore azerothcore.slnx
+
+      - name: Build (Release x64)
+        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+
+      # A release must never ship code whose tests were not run.
+      - name: Run Core tests
+        shell: pwsh
+        run: .\tools\run-tests.ps1
+
+      # Derive the installer version from the tag rather than the build date, so
+      # a rebuild of an old tag produces that tag's version instead of today's.
+      # installer.iss defaults to the build date when MyAppVersion is not passed.
+      - name: Resolve version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.event.inputs.tag || github.ref_name }}'
+          $version = $tag -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Tag '$tag' is not vMAJOR.MINOR.PATCH-shaped; installer version would be invalid."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Installer version: $version"
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          # Inno Setup is not preinstalled on the runner image. Do not pin the
+          # major version in the path: choco ships whatever is current (6 today,
+          # 7 on the maintainer's box) and a hardcoded "Inno Setup 6" breaks
+          # silently the day that changes.
+          choco install innosetup --no-progress -y
+          $iscc = Get-ChildItem -Path @("${env:ProgramFiles(x86)}", $env:ProgramFiles) `
+                                -Filter ISCC.exe -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+                  Select-Object -First 1 -ExpandProperty FullName
+          if (-not $iscc) { throw 'ISCC.exe not found after installing innosetup.' }
+          Write-Host "Using $iscc"
+          & $iscc /DMyAppVersion=${{ steps.version.outputs.version }} installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
+
+      - name: Publish checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist\AzerothCoreSetup.exe -Algorithm SHA256).Hash
+          "$hash  AzerothCoreSetup.exe" | Set-Content dist\AzerothCoreSetup.exe.sha256
+          Write-Host "SHA256 $hash"
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            dist/AzerothCoreSetup.exe
+            dist/AzerothCoreSetup.exe.sha256
+          fail_on_unmatched_files: true

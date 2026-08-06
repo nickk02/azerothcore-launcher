@@ -66,6 +66,16 @@
          WindowsAppSDK packages (YAGNI, per Step 1); suppress the meta-package's
          dependency completeness check rather than pull in unused packages. -->
     <WindowsAppSDKVerifyTransitiveDependencies>false</WindowsAppSDKVerifyTransitiveDependencies>
+
+    <!-- Single source of truth for the app version. Release builds pass the tag
+         (msbuild /p:AcVersion=2026.08.06); anything else is an untagged local
+         build and says so. This feeds app.rc's VERSIONINFO, and the app reads
+         its own resource back at runtime rather than carrying a hardcoded
+         string that has to be remembered on every release. -->
+    <AcVersion Condition="'$(AcVersion)' == ''">0.0.0</AcVersion>
+    <!-- VERSIONINFO's FILEVERSION wants four comma-separated numbers, so
+         2026.08.06 becomes 2026,08,06,0. Leading zeros are fine here. -->
+    <AcVersionCsv>$(AcVersion.Replace('.', ',')),0</AcVersionCsv>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -94,7 +104,9 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="Core\RealmConfig.cpp" />
+    <ClCompile Include="Core\RealmConfig.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Core\RealmStatusChecker.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -111,6 +123,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Core\ArmoryClient.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Core\AppVersion.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Pages\HomePage.cpp">
@@ -137,6 +152,7 @@
     <ClInclude Include="Core\FelbiteSource.h" />
     <ClInclude Include="Core\AddonCatalog.h" />
     <ClInclude Include="Core\ArmoryClient.h" />
+    <ClInclude Include="Core\AppVersion.h" />
     <ClInclude Include="Pages\HomePage.h">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClInclude>
@@ -162,7 +178,19 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="app.rc" Condition="Exists('Assets\wotlk-icon.ico')" />
+    <!-- Always compiled: app.rc carries VERSIONINFO, which every build needs.
+         AC_HAVE_ICON is what is conditional now, so a checkout without the
+         ungitted Blizzard icon still gets a versioned binary, just no custom
+         icon. Previously the whole ResourceCompile was skipped and the exe
+         ended up with no version resource at all. -->
+    <ResourceCompile Include="app.rc">
+      <!-- The quotes around the version string have to survive MSBuild, the
+           response file and rc.exe. Bare quotes are stripped somewhere in that
+           chain and the macro ends up expanding to a stray token, which shows
+           up as a FileVersion of "?" rather than as a build error. -->
+      <PreprocessorDefinitions>AC_VERSION_CSV=$(AcVersionCsv);AC_VERSION_STR=\"$(AcVersion)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="Exists('Assets\wotlk-icon.ico')">AC_HAVE_ICON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
