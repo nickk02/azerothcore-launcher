@@ -4,15 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Page.Resources>
-        <!-- Lightweight styling. Every one of these keys is a brush the default
-             control template already looks up by name, so overriding them here
-             restyles every TextBox, PasswordBox and CheckBox on the page at
-             once. Setting Background/BorderBrush on the controls directly does
-             not work: the templates swap those brushes out again on hover,
-             press and focus, so a plain property set looks correct until the
-             pointer touches it and then snaps back to system chrome. Every
-             interactive state is listed explicitly for that reason. A state
-             left out is a state that falls back to default light-theme blue. -->
+        <!-- Lightweight styling. The default control templates look these
+             brushes up by name, so setting them here restyles every TextBox,
+             PasswordBox and CheckBox on the page.
+
+             Do not set Background or BorderBrush on the controls instead. The
+             templates replace those brushes on hover, press and focus, so the
+             control looks correct until the pointer touches it.
+
+             Every state is listed. A state left out falls back to the default
+             light-theme blue. -->
 
         <!-- TextBox and PasswordBox share the TextControl* keys. -->
         <SolidColorBrush x:Key="TextControlBackground" Color="#B3141414"/>
@@ -63,11 +64,9 @@
         <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="#0A0A0A"/>
         <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="#0A0A0A"/>
 
-        <!-- A launcher that never moves reads as a screenshot of an application
-             rather than an application. The hero drifts continuously, and the
-             logo and panel arrive rather than appearing. Both are slow and
-             low-amplitude on purpose: this should register as the page being
-             alive, not as an effect demanding attention. -->
+        <!-- A still launcher looks like a screenshot. The hero image drifts,
+             and the logo and panel slide in. Both movements are slow and small.
+             The page should look alive, not animated. -->
         <Storyboard x:Key="HeroDrift" RepeatBehavior="Forever" AutoReverse="True">
             <DoubleAnimation Storyboard.TargetName="HeroTransform" Storyboard.TargetProperty="ScaleX"
                              From="1.0" To="1.09" Duration="0:0:26" EnableDependentAnimation="True">
@@ -129,17 +128,14 @@
         </Image>
 
         <!-- The wash spans the whole window rather than sitting inside the
-             field column, which is what lets the fade be wider than the fields
-             are.
+             field column, so the fade can be wider than the fields.
 
-             It is a scrim, not a backdrop: it tops out at 72% black and holds
-             there, so the art carries all the way to the right edge and is
-             merely dimmed behind the fields rather than replaced by them. At
-             the near-opaque value this used to end on, the right third was
-             flatly black and the panel read as a separate box bolted onto the
-             art instead of as part of the same image. 72% is enough for
-             #DCE4F2 text over the darkest part of the hero and still leaves
-             the cape and pillars visible through it. -->
+             It darkens the image; it does not cover it. The gradient stops at
+             72% black and holds, so the art reaches the right edge and stays
+             visible behind the fields. An earlier version ended almost opaque,
+             which turned the right third flat black and made the panel look
+             like a separate box. 72% is dark enough for #DCE4F2 text over the
+             darkest part of the image. -->
         <Rectangle x:Name="ArtWash">
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -152,12 +148,12 @@
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- The logo centres on the page, not on a column. Earlier revisions
-             centred it on the art left of the wash, which only made sense while
-             the wash ended opaque and genuinely cut the art off there. Now that
-             the wash only dims, the whole width is still one image, so the page
-             centre is the real centre. At 280px wide it ends around x=690 and
-             still clears the fields, which begin at 728. -->
+        <!-- The logo centres on the page, not on a column. Earlier versions
+             centred it on the art left of the scrim. That made sense only while
+             the scrim ended opaque and cut the art off there. The scrim now only
+             darkens, so the full width is one image and the page centre is the
+             true centre. At 280px the logo ends near x=690 and clears the
+             fields, which start at 728. -->
         <Image x:Name="LogoImage" Source="/Assets/wotlk-logo.png" Height="140"
                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
                RenderTransformOrigin="0.5,0.5">
@@ -228,12 +224,11 @@
                              separate destination for two of them was more
                              navigation than the app has content.
 
-                             No section heading: the labels already say what
-                             each field is, and "SETUP" over two self-describing
-                             rows was a caption for something that needed no
-                             caption. Extra top margin carries the grouping
-                             instead, since these are configured once and then
-                             ignored, unlike the login fields above. -->
+                             No section heading. The labels name each field,
+                             so "SETUP" captioned two rows that needed no
+                             caption. The top margin groups them instead. You
+                             set these once and then ignore them, unlike the
+                             login fields above. -->
                         <StackPanel Spacing="10" Margin="0,14,0,0">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="WOW INSTALL PATH" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
