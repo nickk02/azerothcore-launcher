@@ -37,20 +37,13 @@ jobs:
           if ($missing) { throw "Missing UI assets: $($missing -join ', ')" }
           Write-Host "All $($required.Count) UI assets present."
 
-      - name: Restore NuGet packages
-        run: nuget restore azerothcore.slnx
-
-      - name: Build (Release x64)
-        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
-
-      # A release must never ship code whose tests were not run.
-      - name: Run Core tests
-        shell: pwsh
-        run: .\tools\run-tests.ps1
-
-      # Derive the installer version from the tag rather than the build date, so
-      # a rebuild of an old tag produces that tag's version instead of today's.
-      # installer.iss defaults to the build date when MyAppVersion is not passed.
+      # Resolved BEFORE the build, because the application binary has to be
+      # stamped with it too. Doing this after the build produced a release whose
+      # installer said 2026.08.06 while the launcher inside it reported 0.0.0,
+      # which is the exact mismatch the version rework existed to kill.
+      #
+      # Deriving from the tag rather than the build date also means rebuilding
+      # an old tag reproduces that tag's version instead of today's.
       - name: Resolve version from tag
         id: version
         shell: pwsh
@@ -61,7 +54,33 @@ jobs:
             throw "Tag '$tag' is not vMAJOR.MINOR.PATCH-shaped; installer version would be invalid."
           }
           "version=$version" >> $env:GITHUB_OUTPUT
-          Write-Host "Installer version: $version"
+          Write-Host "Release version: $version"
+
+      - name: Restore NuGet packages
+        run: nuget restore azerothcore.slnx
+
+      # /p:AcVersion stamps app.rc's VERSIONINFO, which is what the launcher
+      # reads back at runtime to show its own version.
+      - name: Build (Release x64)
+        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /p:AcVersion=${{ steps.version.outputs.version }} /m /v:minimal
+
+      # A release must never ship code whose tests were not run.
+      - name: Run Core tests
+        shell: pwsh
+        run: .\tools\run-tests.ps1
+
+      # Belt and braces: the installer and the application derive their versions
+      # through completely separate mechanisms (ISCC /D versus msbuild /p), so
+      # nothing but an explicit check catches them drifting apart again.
+      - name: Verify the binary carries the release version
+        shell: pwsh
+        run: |
+          $expected = '${{ steps.version.outputs.version }}'
+          $actual = (Get-Item 'x64\Release\azerothcore\azerothcore.exe').VersionInfo.FileVersion
+          if ($actual -ne $expected) {
+            throw "azerothcore.exe reports version '$actual' but the tag says '$expected'."
+          }
+          Write-Host "azerothcore.exe reports $actual"
 
       - name: Build the installer
         shell: pwsh
