@@ -61,12 +61,19 @@ value at the bottom right of its panel.
 
 ## Update checks
 
-The launcher does not check for updates yet. The parts it needs are in place.
-`Core::AppVersion::Current()` returns the running version. Releases use `vX.Y.Z`
-tags and a fixed asset name, so a query to
-`/repos/nickk02/azerothcore-launcher/releases/latest` is a small job.
+The launcher updates itself. At startup it reads
+`/repos/nickk02/azerothcore-launcher/releases/latest`, compares the tag against
+its own `VERSIONINFO`, and if the release is newer it downloads the installer,
+verifies it against the published `.sha256`, runs it and exits.
 
-Decide one thing first. The launcher can show a message and open the release
-page, or it can download the installer and run it. If it runs the installer, it
-must check the file against the published `.sha256` first. Do not run a
-downloaded executable on trust.
+This puts two requirements on every release, and `release.yml` meets both:
+
+1. **The installer asset must be named `AzerothCoreSetup.exe`** and the checksum
+   `AzerothCoreSetup.exe.sha256`. The launcher matches on those exact names.
+2. **Both assets must be present.** A release with an installer and no checksum
+   is treated as no update at all, rather than as a reason to skip verification.
+
+If you ever upload an installer by hand, upload its `.sha256` too, generated
+from the file you actually attached. A checksum that does not match the asset
+stops every client from updating, silently, because a failed verification is
+deliberately quiet.

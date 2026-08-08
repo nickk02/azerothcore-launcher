@@ -29,7 +29,7 @@ missing.
 
 | Path | Contents |
 |---|---|
-| `Core/` | Config, credentials, realm checks, addon source, version. No WinUI dependency, so the tests can build it. |
+| `Core/` | Config, credentials, realm checks, addon source, version, updates. No WinUI dependency, so the tests can build it. |
 | `Pages/` | The XAML pages and their code-behind. |
 | `MainWindow.xaml` | The shell. A fixed 1100x720 window with a title bar that holds no controls. |
 | `installer.iss` | The Inno Setup script. |
@@ -59,6 +59,24 @@ msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /p:AcVersio
 
 If you do not supply `AcVersion`, the build uses `0.0.0`. An untagged build
 must not report a release version.
+
+### Updates
+
+The launcher checks GitHub for a newer release at startup. If it finds one, it
+downloads the installer, checks it against the `.sha256` the release publishes,
+runs it, and closes itself. The installer cannot replace files the app holds
+open, so the app has to exit for the update to apply.
+
+**The checksum step is not optional.** Without it the launcher would run an
+executable it fetched over the network on the strength of a URL. A file that
+fails the check is deleted and never runs.
+
+A build that reports `0.0.0` or `0.0.0-dev`, which is any build without
+`AcVersion`, never updates. Version comparison is numeric per component, so
+`2026.8.10` is newer than `2026.8.9`; a string compare gets that backwards.
+
+A failed check is silent. The launcher must still start when GitHub is
+unreachable.
 
 ### Artwork
 
@@ -102,11 +120,13 @@ a local installer contain the same files.
 These features work: realm configuration, client path, credential storage and
 autofill, realm status, client launch, and the installer.
 
-These features are absent: addon management, the armory view, and update
-checks. `Pages/AddonsPage` compiles, but nothing opens it. The armory view has
-no data source.
+These features are absent: addon management and the armory view.
+`Pages/AddonsPage` compiles, but nothing opens it. The armory view has no data
+source.
 
 ## Licence
 
-None yet. Until this project adds a licence, default copyright applies and you
-receive no rights to redistribute.
+MIT. See [LICENSE](LICENSE).
+
+The licence covers the source in this repository. It does not cover
+`Assets/wotlk-*`, which is Blizzard-owned artwork.
