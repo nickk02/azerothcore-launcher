@@ -8,6 +8,11 @@ namespace winrt::AzerothCore::Pages::implementation
         HomePage();
 
         winrt::fire_and_forget CheckRealmStatusAsync();
+
+        // Runs at startup. If GitHub has a newer release, this downloads it,
+        // checks it against the published SHA256, starts the installer and
+        // closes the app. See Core/UpdateChecker.h.
+        winrt::fire_and_forget CheckForUpdateAsync();
         void RootGrid_SizeChanged(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::SizeChangedEventArgs const&);
 
         winrt::fire_and_forget PlayButton_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);

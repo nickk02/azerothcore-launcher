@@ -8,6 +8,7 @@
 #include "../Core/WowInstall.h"
 #include "../Core/CredentialVault.h"
 #include "../Core/AppVersion.h"
+#include "../Core/UpdateChecker.h"
 #include <winrt/Windows.Storage.Pickers.h>
 #include <ShObjIdl.h>
 
@@ -44,6 +45,7 @@ namespace winrt::AzerothCore::Pages::implementation
             {
                 StartAnimation(L"HeroDrift");
                 StartAnimation(L"ContentEntrance");
+                CheckForUpdateAsync();
             });
     }
 
@@ -268,5 +270,56 @@ namespace winrt::AzerothCore::Pages::implementation
 
         if (!enabled)
             Core::CredentialVault::Clear();
+    }
+
+    // Startup update check.
+    //
+    // DispatcherQueue() is captured before the first co_await, not after.
+    // Core::Task<T> does not marshal back to the calling apartment (see
+    // Core/Async.h), so every UI touch below goes through the queue and the
+    // queue itself is read while still on the UI thread.
+    //
+    // Failure is silent by design. A launcher that cannot reach GitHub must
+    // still let you play, so a failed check leaves the page exactly as it was.
+    winrt::fire_and_forget HomePage::CheckForUpdateAsync()
+    {
+        auto lifetime = get_strong();
+        auto queue = DispatcherQueue();
+
+        auto info = co_await Core::UpdateChecker::CheckAsync();
+        if (!info.Available)
+            co_return;
+
+        queue.TryEnqueue([this, lifetime, info]()
+            {
+                VersionTextBlock().Text(L"Updating to v" + hstring{ info.Latest } + L"...");
+            });
+
+        auto installer = co_await Core::UpdateChecker::DownloadVerifiedAsync(info);
+
+        if (installer.empty())
+        {
+            // Either the download failed or the SHA256 did not match. Say so
+            // and carry on; never run an unverified file.
+            queue.TryEnqueue([this, lifetime, info]()
+                {
+                    VersionTextBlock().Text(L"AzerothCore v" + hstring{ info.Current }
+                                            + L" (update v" + hstring{ info.Latest } + L" failed to verify)");
+                });
+            co_return;
+        }
+
+        queue.TryEnqueue([this, lifetime, installer]()
+            {
+                if (!Core::UpdateChecker::LaunchInstaller(installer))
+                {
+                    VersionTextBlock().Text(L"Update downloaded, but the installer would not start");
+                    return;
+                }
+
+                // The installer cannot replace files this process holds open,
+                // so the app has to go now.
+                Application::Current().Exit();
+            });
     }
 }
