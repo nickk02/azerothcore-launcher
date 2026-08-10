@@ -9,6 +9,7 @@
 #include "../Core/CredentialVault.h"
 #include "../Core/AppVersion.h"
 #include "../Core/UpdateChecker.h"
+#include "AddonsPage.h"
 #include <winrt/Windows.Storage.Pickers.h>
 #include <ShObjIdl.h>
 
@@ -321,5 +322,24 @@ namespace winrt::AzerothCore::Pages::implementation
                 // so the app has to go now.
                 Application::Current().Exit();
             });
+    }
+
+    // Addons opens in a ContentDialog hosting AddonsPage, rather than by
+    // navigating. The shell deliberately has no navigation, and a dialog keeps
+    // the one-page layout intact.
+    //
+    // XamlRoot has to be set explicitly: a ContentDialog created in code has no
+    // way to know which window it belongs to, and shows nothing without it.
+    winrt::fire_and_forget HomePage::AddonsLink_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        auto lifetime = get_strong();
+
+        Controls::ContentDialog dialog;
+        dialog.XamlRoot(this->XamlRoot());
+        dialog.Content(winrt::make<AzerothCore::Pages::implementation::AddonsPage>());
+        dialog.CloseButtonText(L"Close");
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
+
+        co_await dialog.ShowAsync();
     }
 }
