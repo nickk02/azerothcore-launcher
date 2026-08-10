@@ -131,6 +131,9 @@
     <ClCompile Include="Core\UpdateChecker.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Core\AddonInstaller.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Pages\HomePage.cpp">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClCompile>
@@ -157,6 +160,7 @@
     <ClInclude Include="Core\ArmoryClient.h" />
     <ClInclude Include="Core\AppVersion.h" />
     <ClInclude Include="Core\UpdateChecker.h" />
+    <ClInclude Include="Core\AddonInstaller.h" />
     <ClInclude Include="Pages\HomePage.h">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
     </ClInclude>
