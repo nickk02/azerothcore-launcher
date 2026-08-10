@@ -22,6 +22,9 @@ namespace winrt::AzerothCore::Pages::implementation
         void RealmAddressBox_TextChanged(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::Controls::TextChangedEventArgs const&);
         void RememberMeCheckBox_Changed(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
 
+        // Opens the addons UI in a dialog over this page.
+        winrt::fire_and_forget AddonsLink_Click(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::RoutedEventArgs const&);
+
     private:
         void StartAnimation(std::wstring_view key);
         void ShowError(std::wstring_view message);

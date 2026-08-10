@@ -1,6 +1,7 @@
 #pragma once
 #include "Pages/AddonsPage.g.h"
 #include "../Core/AddonCatalog.h"
+#include "../Core/IAddonSource.h"
 
 namespace winrt::AzerothCore::Pages::implementation
 {
@@ -14,6 +15,16 @@ namespace winrt::AzerothCore::Pages::implementation
         winrt::fire_and_forget RunSearchAsync(std::wstring query);
 
     private:
+        // Builds one result row: name and source, a status line, and an Install
+        // button bound to this addon.
+        winrt::Microsoft::UI::Xaml::UIElement BuildResultRow(Core::RemoteAddon const& addon);
+
+        // Runs the install and reports into that row's own status text.
+        winrt::fire_and_forget InstallAddonAsync(
+            Core::RemoteAddon addon,
+            winrt::Microsoft::UI::Xaml::Controls::Button button,
+            winrt::Microsoft::UI::Xaml::Controls::TextBlock status);
+
         Core::AddonCatalog m_catalog;
     };
 }
