@@ -71,9 +71,15 @@ open, so the app has to exit for the update to apply.
 executable it fetched over the network on the strength of a URL. A file that
 fails the check is deleted and never runs.
 
-A build that reports `0.0.0` or `0.0.0-dev`, which is any build without
-`AcVersion`, never updates. Version comparison is numeric per component, so
-`2026.8.10` is newer than `2026.8.9`; a string compare gets that backwards.
+Version comparison is numeric per component, so `2026.8.10` is newer than
+`2026.8.9`; a string compare gets that backwards.
+
+A build reporting `0.0.0-dev` never updates, because that string does not parse
+as a version and nothing is ever newer than an unparseable one. A build
+reporting plain `0.0.0`, which is what `msbuild` stamps without `AcVersion`,
+does parse and **is** older than any release, so it will update itself. If you
+want a local build to leave itself alone, give it the current release version:
+`/p:AcVersion=<latest tag>`.
 
 A failed check is silent. The launcher must still start when GitHub is
 unreachable.
