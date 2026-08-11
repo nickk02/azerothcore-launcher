@@ -336,6 +336,35 @@ namespace winrt::AzerothCore::Pages::implementation
 
         Controls::ContentDialog dialog;
         dialog.XamlRoot(this->XamlRoot());
+
+        // ContentDialogMaxWidth defaults to about 548px, which is narrower than
+        // this content. The dialog clips rather than growing, so the Install
+        // button on every row sat past the right edge and the feature could not
+        // be used at all. Raise the cap before setting the content.
+        dialog.Resources().Insert(box_value(L"ContentDialogMaxWidth"), box_value(760.0));
+        dialog.Resources().Insert(box_value(L"ContentDialogMinWidth"), box_value(680.0));
+        dialog.Resources().Insert(box_value(L"ContentDialogMaxHeight"), box_value(640.0));
+
+        // Match the launcher instead of the system dialog chrome.
+        auto brush = [](uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
+            return Media::SolidColorBrush(Microsoft::UI::ColorHelper::FromArgb(a, r, g, b));
+        };
+        dialog.Resources().Insert(box_value(L"ContentDialogBackground"), brush(0xFF, 0x0A, 0x0A, 0x0A));
+        dialog.Resources().Insert(box_value(L"ContentDialogForeground"), brush(0xFF, 0xDC, 0xE4, 0xF2));
+        dialog.Resources().Insert(box_value(L"ContentDialogBorderBrush"), brush(0x66, 0xCB, 0xB9, 0x8A));
+        dialog.Resources().Insert(box_value(L"ContentDialogSeparatorBorderBrush"), brush(0x33, 0xCB, 0xB9, 0x8A));
+
+        // The close button picks up the default accent otherwise, which reads
+        // as a stray brown block against this palette.
+        dialog.Resources().Insert(box_value(L"ButtonBackground"), brush(0x00, 0, 0, 0));
+        dialog.Resources().Insert(box_value(L"ButtonBackgroundPointerOver"), brush(0x33, 0xCB, 0xB9, 0x8A));
+        dialog.Resources().Insert(box_value(L"ButtonBackgroundPressed"), brush(0x59, 0xCB, 0xB9, 0x8A));
+        dialog.Resources().Insert(box_value(L"ButtonForeground"), brush(0xFF, 0xCB, 0xB9, 0x8A));
+        dialog.Resources().Insert(box_value(L"ButtonForegroundPointerOver"), brush(0xFF, 0xF0, 0xC8, 0x60));
+        dialog.Resources().Insert(box_value(L"ButtonForegroundPressed"), brush(0xFF, 0xF0, 0xC8, 0x60));
+        dialog.Resources().Insert(box_value(L"ButtonBorderBrush"), brush(0x66, 0xCB, 0xB9, 0x8A));
+        dialog.Resources().Insert(box_value(L"ButtonBorderBrushPointerOver"), brush(0xFF, 0xF0, 0xC8, 0x60));
+
         dialog.Content(winrt::make<AzerothCore::Pages::implementation::AddonsPage>());
         dialog.CloseButtonText(L"Close");
         dialog.DefaultButton(Controls::ContentDialogButton::Close);

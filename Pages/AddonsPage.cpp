@@ -95,7 +95,11 @@ namespace winrt::AzerothCore::Pages::implementation
         }
         else
         {
+            // Collapsed rather than blank. An empty TextBlock still occupies a
+            // line, which left every not-yet-installed row a third taller than
+            // it needed to be and made the list look sparse.
             status.Foreground(Brush(0xFF, 0xCB, 0xB9, 0x8A));
+            status.Visibility(Visibility::Collapsed);
         }
         text.Children().Append(status);
 
@@ -125,8 +129,8 @@ namespace winrt::AzerothCore::Pages::implementation
 
         Border wrapper;
         wrapper.Child(row);
-        wrapper.Padding({ 10, 8, 10, 8 });
-        wrapper.Margin({ 0, 0, 0, 6 });
+        wrapper.Padding({ 12, 7, 12, 7 });
+        wrapper.Margin({ 0, 0, 0, 5 });
         wrapper.CornerRadius({ 3, 3, 3, 3 });
         wrapper.Background(Brush(0x66, 0x14, 0x14, 0x14));
         wrapper.BorderBrush(Brush(0x33, 0xCB, 0xB9, 0x8A));
@@ -148,6 +152,7 @@ namespace winrt::AzerothCore::Pages::implementation
         auto queue = DispatcherQueue();
 
         button.IsEnabled(false);
+        status.Visibility(Visibility::Visible);
         status.Text(L"Installing...");
         status.Foreground(Brush(0xFF, 0xCB, 0xB9, 0x8A));
 
@@ -163,6 +168,7 @@ namespace winrt::AzerothCore::Pages::implementation
                 // installer distinguishes a missing client path from a bad
                 // download from an unsafe archive, and each needs a different
                 // response from the user.
+                status.Visibility(Visibility::Visible);
                 status.Text(result.Message);
                 status.Foreground(ok ? Brush(0xFF, 0x9E, 0xD1, 0x9E)
                                      : Brush(0xFF, 0xFF, 0x9B, 0x9B));
