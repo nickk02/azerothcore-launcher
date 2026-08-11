@@ -17,7 +17,15 @@ namespace Core
 
     struct AddonCatalog
     {
+        // Real sources: whatever is configured for the app.
         AddonCatalog();
+
+        // Injected sources. This exists so the fan-out behaviour can be
+        // tested without the network: the distinction between "no addons
+        // matched" and "a source is broken" drives which message the UI
+        // shows, and it is not something to leave unverified.
+        explicit AddonCatalog(std::vector<std::unique_ptr<IAddonSource>> sources);
+
         Task<AddonSearchResult> SearchAsync(std::wstring query);
 
     private:

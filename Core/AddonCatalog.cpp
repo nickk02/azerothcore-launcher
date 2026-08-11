@@ -11,6 +11,11 @@ namespace Core
         // half-built second source with no key to actually use it).
     }
 
+    AddonCatalog::AddonCatalog(std::vector<std::unique_ptr<IAddonSource>> sources)
+        : m_sources(std::move(sources))
+    {
+    }
+
     Task<AddonSearchResult> AddonCatalog::SearchAsync(std::wstring query)
     {
         AddonSearchResult result;
