@@ -20,7 +20,7 @@
         <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#66DCE4F2"/>
     </Page.Resources>
 
-    <Grid Background="#0A0A0A" Width="620" Height="520">
+    <Grid Background="#0A0A0A" Width="620" Height="470">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -34,9 +34,8 @@
         <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,14">
             <TextBlock Text="ADDONS" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
             <TextBlock Foreground="#A6DCE4F2" FontSize="12" TextWrapping="Wrap">
-                Search 3.3.5a addons from Felbite. Install puts the addon in your
-                client's Interface\AddOns folder. Restart the game client to load
-                anything newly installed.
+                Results come from Felbite. Install puts the addon into your client's
+                Interface\AddOns folder. Restart the game to load anything new.
             </TextBlock>
         </StackPanel>
 
