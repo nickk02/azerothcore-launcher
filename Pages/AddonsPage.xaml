@@ -17,7 +17,9 @@
         <SolidColorBrush x:Key="TextControlForeground" Color="#DCE4F2"/>
         <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#DCE4F2"/>
         <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#66DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#99DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#B3DCE4F2"/>
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#B3DCE4F2"/>
     </Page.Resources>
 
     <Grid Background="#0A0A0A" Width="620" Height="470">
@@ -69,7 +71,7 @@
         <TextBlock x:Name="StatusTextBlock" Grid.Row="2" Text="" Foreground="#FF9B9B"
                    FontSize="12" Margin="0,0,0,8" TextWrapping="Wrap" Visibility="Collapsed"/>
 
-        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Padding="0,0,14,0">
             <!-- Rows are built in code-behind rather than by a DataTemplate:
                  each one needs its own Install button and status text wired to
                  one RemoteAddon, and the results are a plain std::vector rather

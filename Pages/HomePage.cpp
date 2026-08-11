@@ -296,19 +296,23 @@ namespace winrt::AzerothCore::Pages::implementation
                 VersionTextBlock().Text(L"Updating to v" + hstring{ info.Latest } + L"...");
             });
 
-        auto installer = co_await Core::UpdateChecker::DownloadVerifiedAsync(info);
+        auto download = co_await Core::UpdateChecker::DownloadVerifiedAsync(info);
 
-        if (installer.empty())
+        if (download.Path.empty())
         {
-            // Either the download failed or the SHA256 did not match. Say so
-            // and carry on; never run an unverified file.
-            queue.TryEnqueue([this, lifetime, info]()
+            // Report the actual reason. "failed to verify" used to be shown for
+            // every failure, including a locked file left by an installer that
+            // was already open, which told the user their download was corrupt
+            // when it was fine.
+            queue.TryEnqueue([this, lifetime, info, download]()
                 {
                     VersionTextBlock().Text(L"AzerothCore v" + hstring{ info.Current }
-                                            + L" (update v" + hstring{ info.Latest } + L" failed to verify)");
+                                            + L" (" + hstring{ download.Error } + L")");
                 });
             co_return;
         }
+
+        auto installer = download.Path;
 
         queue.TryEnqueue([this, lifetime, installer]()
             {
@@ -367,7 +371,9 @@ namespace winrt::AzerothCore::Pages::implementation
 
         dialog.Content(winrt::make<AzerothCore::Pages::implementation::AddonsPage>());
         dialog.CloseButtonText(L"Close");
-        dialog.DefaultButton(Controls::ContentDialogButton::Close);
+        // Deliberately not DefaultButton(Close): that promotes it to the accent
+        // button, which renders in the system blue and ignores every
+        // ButtonBackground override set above.
 
         co_await dialog.ShowAsync();
     }

@@ -15,6 +15,20 @@ namespace Core
         std::wstring Error;              // set when the check could not complete
     };
 
+    // Outcome of a download attempt. Path is set only when there is a
+    // verified installer ready to run. Error explains anything else.
+    //
+    // This is a struct rather than a bare path because the reasons are not
+    // interchangeable: a checksum mismatch means do not trust the file, while
+    // a locked file means an update is already under way. Reporting both as
+    // "failed to verify" tells the user their download is corrupt when it is
+    // not.
+    struct DownloadResult
+    {
+        std::wstring Path;
+        std::wstring Error;
+    };
+
     // Checks GitHub for a newer release, downloads it, and hands off to the
     // installer.
     //
@@ -31,9 +45,12 @@ namespace Core
         static Task<UpdateInfo> CheckAsync();
 
         // Downloads the installer and checks it against the published SHA256.
-        // Returns the path to the verified file, or an empty string. A file
-        // that fails the checksum is deleted rather than left on disk.
-        static Task<std::wstring> DownloadVerifiedAsync(UpdateInfo info);
+        // A file that fails the checksum is deleted rather than left on disk.
+        //
+        // If a verified copy of this version is already in the temp directory
+        // it is reused rather than downloaded again, which also covers the
+        // case where a previous run left an installer open on it.
+        static Task<DownloadResult> DownloadVerifiedAsync(UpdateInfo info);
 
         // Starts the installer and returns whether it launched. The caller is
         // expected to close the app straight after: the installer cannot

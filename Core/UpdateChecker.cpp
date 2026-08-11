@@ -83,6 +83,45 @@ namespace Core
             return client;
         }
 
+
+        // Hashes a file on disk, for deciding whether an already-downloaded
+        // installer is the one this release publishes.
+        std::wstring HashFileImpl(std::filesystem::path const& path)
+        {
+            FILE* file = nullptr;
+            if (_wfopen_s(&file, path.c_str(), L"rb") != 0 || !file)
+                return {};
+
+            std::vector<uint8_t> bytes;
+            uint8_t chunk[64 * 1024];
+            size_t read = 0;
+            while ((read = fread(chunk, 1, sizeof(chunk), file)) > 0)
+                bytes.insert(bytes.end(), chunk, chunk + read);
+            fclose(file);
+
+            if (bytes.empty())
+                return {};
+
+            auto buffer = CryptographicBuffer::CreateFromByteArray(bytes);
+            auto provider = HashAlgorithmProvider::OpenAlgorithm(HashAlgorithmNames::Sha256());
+            std::wstring hex = CryptographicBuffer::EncodeToHexString(provider.HashData(buffer)).c_str();
+            std::transform(hex.begin(), hex.end(), hex.begin(),
+                           [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
+            return hex;
+        }
+
+        // An installer left open by a previous run holds its own file open.
+        // That lock is the signal that an update is already in progress.
+        bool IsFileLockedImpl(std::filesystem::path const& path)
+        {
+            HANDLE h = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr,
+                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (h == INVALID_HANDLE_VALUE)
+                return GetLastError() == ERROR_SHARING_VIOLATION;
+            CloseHandle(h);
+            return false;
+        }
+
         std::wstring ToLowerHex(IBuffer const& buffer)
         {
             std::wstring hex = CryptographicBuffer::EncodeToHexString(buffer).c_str();
@@ -91,6 +130,9 @@ namespace Core
             return hex;
         }
     }
+
+    static std::wstring HashFile(std::filesystem::path const& p) { return HashFileImpl(p); }
+    static bool IsFileLocked(std::filesystem::path const& p) { return IsFileLockedImpl(p); }
 
     bool UpdateChecker::IsNewer(std::wstring const& candidate, std::wstring const& current)
     {
@@ -164,9 +206,11 @@ namespace Core
         co_return info;
     }
 
-    Task<std::wstring> UpdateChecker::DownloadVerifiedAsync(UpdateInfo info)
+    Task<DownloadResult> UpdateChecker::DownloadVerifiedAsync(UpdateInfo info)
     {
+        DownloadResult out;
         std::filesystem::path target;
+        std::error_code ec;
 
         try
         {
@@ -185,7 +229,38 @@ namespace Core
                            [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
 
             if (expected.size() != 64)
-                co_return std::wstring();   // not a SHA256; refuse rather than guess
+            {
+                out.Error = L"The release checksum is malformed";
+                co_return out;
+            }
+
+            wchar_t tempDir[MAX_PATH]{};
+            if (GetTempPathW(MAX_PATH, tempDir) == 0)
+            {
+                out.Error = L"Could not find the temp directory";
+                co_return out;
+            }
+            target = std::filesystem::path(tempDir) / (L"AzerothCoreSetup-" + info.Latest + L".exe");
+
+            // A verified copy may already be here from an earlier run. Reuse it
+            // rather than pulling the whole installer down again.
+            if (std::filesystem::exists(target, ec))
+            {
+                if (HashFile(target) == expected)
+                {
+                    // Locked means a previous run's installer is still open on
+                    // it. Starting a second one would stack wizards on the user.
+                    if (IsFileLocked(target))
+                    {
+                        out.Error = L"An update is already running";
+                        co_return out;
+                    }
+                    out.Path = target.wstring();
+                    co_return out;
+                }
+                // Stale or corrupt: drop it and fetch again.
+                std::filesystem::remove(target, ec);
+            }
 
             IBuffer payload = co_await client.GetBufferAsync(
                 winrt::Windows::Foundation::Uri(info.InstallerUrl));
@@ -194,26 +269,25 @@ namespace Core
             std::wstring actual = ToLowerHex(provider.HashData(payload));
 
             if (actual != expected)
-                co_return std::wstring();   // tampered, truncated, or the wrong file
+            {
+                // Tampered, truncated, or the wrong file. This is the only case
+                // that means "do not trust this download".
+                out.Error = L"The download failed its checksum";
+                co_return out;
+            }
 
             // Write only after the hash matches, so an unverified installer
             // never exists on disk under a name anything might execute.
-            wchar_t tempDir[MAX_PATH]{};
-            if (GetTempPathW(MAX_PATH, tempDir) == 0)
-                co_return std::wstring();
-
-            target = std::filesystem::path(tempDir) / (L"AzerothCoreSetup-" + info.Latest + L".exe");
-
             auto reader = DataReader::FromBuffer(payload);
             std::vector<uint8_t> bytes(payload.Length());
             reader.ReadBytes(bytes);
 
-            std::error_code ec;
-            std::filesystem::remove(target, ec);
-
             FILE* file = nullptr;
             if (_wfopen_s(&file, target.c_str(), L"wb") != 0 || !file)
-                co_return std::wstring();
+            {
+                out.Error = L"Could not write the download";
+                co_return out;
+            }
 
             size_t written = fwrite(bytes.data(), 1, bytes.size(), file);
             fclose(file);
@@ -221,17 +295,17 @@ namespace Core
             if (written != bytes.size())
             {
                 std::filesystem::remove(target, ec);
-                co_return std::wstring();
+                out.Error = L"Could not write the download";
+                co_return out;
             }
 
-            co_return target.wstring();
+            out.Path = target.wstring();
+            co_return out;
         }
         catch (...)
         {
-            std::error_code ec;
-            if (!target.empty())
-                std::filesystem::remove(target, ec);
-            co_return std::wstring();
+            out.Error = L"Could not reach the download";
+            co_return out;
         }
     }
 
