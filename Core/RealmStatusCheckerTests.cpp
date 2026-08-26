@@ -15,8 +15,8 @@ int main()
         assert(port == 3724); // default when no port given
     }
     {
-        auto [host, port] = Core::RealmStatusChecker::ParseAddress(L"10.0.0.85:8085");
-        assert(host == L"10.0.0.85");
+        auto [host, port] = Core::RealmStatusChecker::ParseAddress(L"192.168.1.100:8085");
+        assert(host == L"192.168.1.100");
         assert(port == 8085);
     }
 

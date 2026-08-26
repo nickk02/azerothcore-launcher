@@ -265,7 +265,7 @@
                             <StackPanel Spacing="4">
                                 <TextBlock Text="REALM ADDRESS" Foreground="#CBB98A" FontSize="12" FontWeight="SemiBold"/>
                                 <TextBox x:Name="RealmAddressBox" Padding="8,6" FontSize="14"
-                                         PlaceholderText="e.g. 10.0.0.85"
+                                         PlaceholderText="e.g. 192.168.1.100"
                                          TextChanged="RealmAddressBox_TextChanged"/>
                             </StackPanel>
 
