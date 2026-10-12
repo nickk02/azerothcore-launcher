@@ -38,10 +38,7 @@ $suites = @(
     @{ Name = 'RealmConfig';       Test = 'Core\RealmConfigTests.cpp';       Sources = @('Core\RealmConfig.cpp');       Libs = @() }
     @{ Name = 'RealmStatusChecker';Test = 'Core\RealmStatusCheckerTests.cpp';Sources = @('Core\RealmStatusChecker.cpp');Libs = @() }
     @{ Name = 'CredentialVault';   Test = 'Core\CredentialVaultTests.cpp';   Sources = @('Core\CredentialVault.cpp');   Libs = @('user32.lib') }
-    @{ Name = 'FelbiteSource';     Test = 'Core\FelbiteSourceTests.cpp';     Sources = @('Core\FelbiteSource.cpp');     Libs = @() }
     @{ Name = 'UpdateChecker';     Test = 'Core\UpdateCheckerTests.cpp';     Sources = @('Core\UpdateChecker.cpp','Core\AppVersion.cpp'); Libs = @('shell32.lib','version.lib') }
-    @{ Name = 'AddonInstaller';    Test = 'Core\AddonInstallerTests.cpp';    Sources = @('Core\AddonInstaller.cpp'); Libs = @() }
-    @{ Name = 'AddonCatalog';      Test = 'Core\AddonCatalogTests.cpp';      Sources = @('Core\AddonCatalog.cpp','Core\FelbiteSource.cpp'); Libs = @() }
 )
 
 function Find-VcVars {

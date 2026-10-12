@@ -28,9 +28,7 @@
 *.yml  text
 *.ps1  text eol=crlf
 
-# Binary assets: never diffed, never line-ending converted. The wotlk-* art is
-# gitignored, but the entries stay so that anything that does land here is
-# treated correctly rather than corrupted by normalisation.
+# Binary assets: never diffed, never line-ending converted.
 *.png binary
 *.ico binary
 *.exe binary

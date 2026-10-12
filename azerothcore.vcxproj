@@ -116,12 +116,6 @@
     <ClCompile Include="Core\CredentialVault.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Core\FelbiteSource.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Core\AddonCatalog.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="Core\ArmoryClient.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -131,14 +125,8 @@
     <ClCompile Include="Core\UpdateChecker.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Core\AddonInstaller.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="Pages\HomePage.cpp">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Pages\AddonsPage.cpp">
-      <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -154,18 +142,11 @@
     <ClInclude Include="Core\WowInstall.h" />
     <ClInclude Include="Core\CredentialVault.h" />
     <ClInclude Include="Core\Async.h" />
-    <ClInclude Include="Core\IAddonSource.h" />
-    <ClInclude Include="Core\FelbiteSource.h" />
-    <ClInclude Include="Core\AddonCatalog.h" />
     <ClInclude Include="Core\ArmoryClient.h" />
     <ClInclude Include="Core\AppVersion.h" />
     <ClInclude Include="Core\UpdateChecker.h" />
-    <ClInclude Include="Core\AddonInstaller.h" />
     <ClInclude Include="Pages\HomePage.h">
       <DependentUpon>Pages\HomePage.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Pages\AddonsPage.h">
-      <DependentUpon>Pages\AddonsPage.xaml</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -174,8 +155,6 @@
     <Midl Include="MainWindow.idl" />
     <Page Include="Pages\HomePage.xaml" />
     <Midl Include="Pages\HomePage.idl" />
-    <Page Include="Pages\AddonsPage.xaml" />
-    <Midl Include="Pages\AddonsPage.idl" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -187,9 +166,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Always compiled: app.rc carries VERSIONINFO, which every build needs.
-         AC_HAVE_ICON is what is conditional now, so a checkout without the
-         ungitted Blizzard icon still gets a versioned binary, just no custom
-         icon. Previously the whole ResourceCompile was skipped and the exe
+         AC_HAVE_ICON is what is conditional, so a checkout without the
+         icon file still gets a versioned binary, just no custom icon. Previously the whole ResourceCompile was skipped and the exe
          ended up with no version resource at all. -->
     <ResourceCompile Include="app.rc">
       <!-- The quotes around the version string have to survive MSBuild, the
@@ -197,7 +175,7 @@
            chain and the macro ends up expanding to a stray token, which shows
            up as a FileVersion of "?" rather than as a build error. -->
       <PreprocessorDefinitions>AC_VERSION_CSV=$(AcVersionCsv);AC_VERSION_STR=\"$(AcVersion)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="Exists('Assets\wotlk-icon.ico')">AC_HAVE_ICON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="Exists('Assets\icon.ico')">AC_HAVE_ICON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>

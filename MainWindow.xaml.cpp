@@ -29,9 +29,7 @@ namespace winrt::AzerothCore::implementation
         SetupFixedWindow();
 
         // One destination. Login and setup share HomePage, so there is no
-        // first-run branch and nothing to navigate between. Pages/AddonsPage.*
-        // still compiles, but nothing opens it. Addon installation is a
-        // separate job.
+        // first-run branch and nothing to navigate between.
         ContentFrame().Navigate(xaml_typename<AzerothCore::Pages::HomePage>());
     }
 

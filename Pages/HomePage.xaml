@@ -119,7 +119,7 @@
          hero image, which both overhangs the left edge and scales past its box
          while drifting, would paint over the shell around it. -->
     <Grid x:Name="RootGrid" SizeChanged="RootGrid_SizeChanged">
-        <Image x:Name="HeroImage" Source="/Assets/wotlk-hero.png" Stretch="UniformToFill"
+        <Image x:Name="HeroImage" Source="/Assets/hero.png" Stretch="UniformToFill"
                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                Margin="-80,0,0,0" RenderTransformOrigin="0.5,0.5">
             <Image.RenderTransform>
@@ -154,7 +154,7 @@
              darkens, so the full width is one image and the page centre is the
              true centre. At 280px the logo ends near x=690 and clears the
              fields, which start at 728. -->
-        <Image x:Name="LogoImage" Source="/Assets/wotlk-logo.png" Height="140"
+        <Image x:Name="LogoImage" Source="/Assets/logo.png" Height="140"
                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,28,0,0" Opacity="0"
                RenderTransformOrigin="0.5,0.5">
             <Image.RenderTransform>
@@ -269,14 +269,6 @@
                                          TextChanged="RealmAddressBox_TextChanged"/>
                             </StackPanel>
 
-                            <!-- Addons opens over this page rather than
-                                 navigating to another one. The shell has no
-                                 navigation by design, and one link is cheaper
-                                 than bringing a nav rail back for a single
-                                 secondary screen. -->
-                            <HyperlinkButton x:Name="AddonsLink" Content="Manage addons"
-                                             Click="AddonsLink_Click"
-                                             Padding="0" FontSize="12" HorizontalAlignment="Left"/>
                         </StackPanel>
                     </StackPanel>
 

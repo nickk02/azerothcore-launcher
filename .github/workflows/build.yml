@@ -35,7 +35,7 @@ jobs:
       - name: Verify UI assets are present
         shell: pwsh
         run: |
-          $required = 'wotlk-hero.png', 'wotlk-logo.png', 'wotlk-icon.png', 'wotlk-icon.ico'
+          $required = 'hero.png', 'logo.png', 'icon.png', 'icon.ico'
           $missing = $required | Where-Object { -not (Test-Path (Join-Path 'Assets' $_)) }
           if ($missing) {
             throw "Missing UI assets: $($missing -join ', '). The build would silently produce an art-free launcher."
