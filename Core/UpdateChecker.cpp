@@ -3,8 +3,7 @@
 
 // Windows.Foundation.h carries the operator co_await overloads for WinRT async
 // types. Windows.Web.Http.h declares HttpClient but not those overloads, so
-// co_awaiting a response fails to compile without it. Same trap as
-// FelbiteSource.cpp; the comment there has the full detail.
+// co_awaiting a response fails to compile without it.
 #include <winrt/Windows.Foundation.h>
 // Range-for over a WinRT collection (the assets JsonArray below) needs the
 // Collections namespace header. Without it the begin/end for IIterable are

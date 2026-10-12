@@ -1,40 +1,70 @@
 # AzerothCore Launcher
 
-A launcher for World of Warcraft 3.3.5a (Wrath of the Lich King) private realms.
-
-The launcher stores your realm address and your client path. It saves your
-account name in the Windows Credential Manager. It shows if the realm is
-online. It starts the client against that realm.
-
-Windows only. The app uses C++/WinRT and WinUI 3 (Windows App SDK). It builds
-as an unpackaged, self-contained x64 application.
+A small Windows launcher for World of Warcraft 3.3.5a (Wrath of the Lich King)
+private servers, including any AzerothCore realm. You enter your server's
+address once. The launcher then writes the realmlist, shows whether the realm
+is online, remembers your account name, and starts the game.
 
 > **The game client is not included.** This project does not download or
 > supply Blizzard game data. Use your own 3.3.5a client.
 
+## What you need
+
+- Windows 10 or 11, 64-bit.
+- A 3.3.5a (build 12340) client folder that contains `Wow.exe`.
+- The address of the server you want to play on. Your server's admin gives you
+  this.
+
 ## Install
 
 1. Download `AzerothCoreSetup.exe` from [Releases](../../releases).
-2. Run it. Setup installs to `%USERPROFILE%\AzerothCore`. It does not need
-   administrator rights.
-3. Copy your 3.3.5a client into the `Client\` folder. Setup creates this folder
-   and opens it at the end.
-4. Start the launcher. Click **Browse**. Select `Wow.exe` in that folder.
-5. Type the realm address, your account name, and your password. Click **Play**.
+2. Windows may show a blue "Windows protected your PC" screen, because the
+   installer is not code-signed. Click **More info**, then **Run anyway**.
+3. Setup installs to `%USERPROFILE%\AzerothCore`. It does not need
+   administrator rights. It also installs the Visual C++ 2015-2022 x64
+   redistributable if it is missing.
+4. Copy your 3.3.5a client into the `Client\` folder that Setup opens at the
+   end, or keep it where it is and point the launcher at it in step 5.
+5. Start the launcher. Click **Browse** and pick `Wow.exe` from your client
+   folder.
 
-Setup also installs the Visual C++ 2015-2022 x64 redistributable if it is
-missing.
+## Set your server's realmlist
 
-## Layout
+Type the realm address into **Realm address**. Use the same text you would put
+after `set realmlist` in `WTF\realmlist.wtf`, for example `logon.example.com`
+or `192.168.1.100`. The launcher checks port 3724 for the status line. If your
+server's login port is different, add it as `host:port`.
 
-| Path | Contents |
-|---|---|
-| `Core/` | Config, credentials, realm checks, addon source, version, updates. No WinUI dependency, so the tests can build it. |
-| `Pages/` | The XAML pages and their code-behind. |
-| `MainWindow.xaml` | The shell. A fixed 1100x720 window with a title bar that holds no controls. |
-| `installer.iss` | The Inno Setup script. |
-| `tools/run-tests.ps1` | Builds and runs the `Core` tests. |
-| `docs/RELEASING.md` | How to cut a release. |
+Type your account name and password. Tick **Remember me** if you want the
+launcher to keep them in the Windows Credential Manager and type them into the
+game's login screen for you. Click **Play**.
+
+When you click Play, the launcher writes `WTF\realmlist.wtf` (and the locale
+folder copies, if you have them) for you. You do not edit that file by hand.
+
+The status line above the account field shows **Online** or **Unreachable**
+for the address you typed.
+
+## If it will not start
+
+**"That isn't a 3.3.5a Wow.exe" or "Failed to launch WoW".** You picked the
+wrong file or the wrong folder. Pick the file named exactly `Wow.exe` that sits
+next to the `Data` folder of a 3.3.5a client. Do not pick `Launcher.exe`,
+`Wow-64.exe`, or a `Wow.exe` from a different expansion. If the client lives in
+`Program Files`, move it somewhere your user can write to, such as
+`C:\Games\WoW335`, because the launcher has to write
+`WTF\realmlist.wtf`.
+
+**Status says Unreachable.** The address or port is wrong, or the server is
+down. Check the address with the server's admin.
+
+**Windows says the installer is unsafe.** See step 2 of Install. The warning
+appears because the installer is unsigned. The release page lists a SHA256
+checksum for the file if you want to check it yourself.
+
+---
+
+# For developers
 
 ## Build
 
@@ -86,14 +116,9 @@ unreachable.
 
 ### Artwork
 
-`Assets/wotlk-*` holds the hero image, the wordmark, and the application icon.
-Blizzard owns this art. The files are in the repository, so a clone builds the
-complete product.
-
-The build also works without these files. `Assets` is a wildcard content item,
-and the icon resource compiles only if the `.ico` file is present. The result
-is a launcher with no art. Both workflows check for the four files, because
-this build passes and hides the fault until somebody opens the app.
+`Assets/` holds original art made for this project (hero, wordmark, icon). The
+build still works without it, with no art and no build error, so both CI
+workflows check that the four files exist.
 
 ## Tests
 
@@ -116,23 +141,11 @@ success. The runner supplies `/UNDEBUG` to prevent this.
 |---|---|---|
 | `build.yml` | Push or PR to `main` | Restore, build Release x64, run the `Core` tests, upload the output |
 | `release.yml` | Tag `v*` | Build, test, compile the installer with the version from the tag, attach the installer and a SHA256 file |
-| `felbite-healthcheck.yml` | Daily | Check that the addon source responds |
 
 Both build workflows check the artwork before they compile. A CI installer and
 a local installer contain the same files.
-
-## Status
-
-These features work: realm configuration, client path, credential storage and
-autofill, realm status, client launch, and the installer.
-
-These features are absent: addon management and the armory view.
-`Pages/AddonsPage` compiles, but nothing opens it. The armory view has no data
-source.
 
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
 
-The licence covers the source in this repository. It does not cover
-`Assets/wotlk-*`, which is Blizzard-owned artwork.

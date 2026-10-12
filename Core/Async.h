@@ -19,8 +19,8 @@ namespace Core
     // the Windows SDK's cppwinrt headers, zero hits for
     // "struct category<std::vector" anywhere -- so
     // IAsyncOperation<std::vector<T>> can never compile, regardless of
-    // whether T itself is WinRT-compatible. This isn't specific to
-    // RemoteAddon; it would fail even for IAsyncOperation<std::vector<int>>.
+    // whether T itself is WinRT-compatible. It would fail even for
+    // IAsyncOperation<std::vector<int>>.
     //
     // Task<T> sidesteps the ABI requirement entirely: it's a plain C++20
     // coroutine type with its own promise_type, still fully co_await-able
@@ -46,7 +46,7 @@ namespace Core
     // since DispatcherQueue() is a property of a thread-affine
     // DependencyObject and is therefore just as unsafe to call off the UI
     // thread as the TryEnqueue'd body would be. See the established pattern
-    // in Pages/AddonsPage.cpp's RunSearchAsync, which genuinely exercises
+    // in HomePage::PlayButton_Click, which genuinely exercises
     // this hazard (its Task<T>-returning call hops onto a background thread
     // via resume_background() before resuming): capture
     // `auto queue = DispatcherQueue();` first, then `co_await` the Task<T>,

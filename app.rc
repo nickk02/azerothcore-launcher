@@ -1,10 +1,8 @@
 // The icon is guarded rather than the whole .rc being skipped, because this
 // file now also carries VERSIONINFO and that has to exist in every build.
-// Assets\wotlk-icon.ico is Blizzard art and is never committed, so any clone
-// or CI checkout builds without it; azerothcore.vcxproj defines AC_HAVE_ICON
-// only when the file is actually present.
+// azerothcore.vcxproj defines AC_HAVE_ICON only when Assets\icon.ico exists.
 #ifdef AC_HAVE_ICON
-IDI_ICON1 ICON "Assets\\wotlk-icon.ico"
+IDI_ICON1 ICON "Assets\\icon.ico"
 #endif
 
 #include <winver.h>
