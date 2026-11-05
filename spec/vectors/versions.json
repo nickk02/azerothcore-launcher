@@ -1,0 +1,28 @@
+{
+  "description": "IsNewer(candidate, current). Components are compared numerically; a missing component is 0; any non-integer component makes the result false.",
+  "cases": [
+    {"candidate": "2026.08.07", "current": "2026.08.06", "newer": true},
+    {"candidate": "2026.08.06", "current": "2026.08.07", "newer": false},
+    {"candidate": "2026.08.06", "current": "2026.08.06", "newer": false},
+    {"candidate": "2027.01.01", "current": "2026.12.31", "newer": true},
+    {"candidate": "2026.8.10", "current": "2026.8.9", "newer": true},
+    {"candidate": "2026.8.9", "current": "2026.8.10", "newer": false},
+    {"candidate": "2026.10.01", "current": "2026.09.01", "newer": true},
+    {"candidate": "2026.08.06", "current": "2026.8.6", "newer": false},
+    {"candidate": "2026.8.6", "current": "2026.08.06", "newer": false},
+    {"candidate": "2026.8", "current": "2026.8.0", "newer": false},
+    {"candidate": "2026.8.0", "current": "2026.8", "newer": false},
+    {"candidate": "2026.8.1", "current": "2026.8", "newer": true},
+    {"candidate": "2026.08.06", "current": "0.0.0-dev", "newer": false},
+    {"candidate": "0.0.0-dev", "current": "2026.08.06", "newer": false},
+    {"candidate": "0.0.0-dev", "current": "0.0.0-dev", "newer": false},
+    {"candidate": "", "current": "2026.08.06", "newer": false},
+    {"candidate": "2026.08.06", "current": "", "newer": false},
+    {"candidate": "latest", "current": "2026.08.06", "newer": false},
+    {"candidate": "2026..06", "current": "2026.08.06", "newer": false},
+    {"candidate": "2026.08.06", "current": "not.a.version", "newer": false},
+    {"candidate": "v2026.08.07", "current": "2026.08.06", "newer": false},
+    {"candidate": "2026.08.06", "current": "0.0.0", "newer": true},
+    {"candidate": "0.0.0", "current": "2026.08.06", "newer": false}
+  ]
+}

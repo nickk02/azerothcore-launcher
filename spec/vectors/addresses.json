@@ -1,0 +1,10 @@
+{
+  "description": "ParseAddress(text) -> host, port. Split at the first ':'. No colon, or an unparseable port, gives 3724.",
+  "cases": [
+    {"input": "logon.example.com:3724", "host": "logon.example.com", "port": 3724},
+    {"input": "logon.example.com", "host": "logon.example.com", "port": 3724},
+    {"input": "192.168.1.100:8085", "host": "192.168.1.100", "port": 8085},
+    {"input": "logon.example.com:", "host": "logon.example.com", "port": 3724},
+    {"input": "logon.example.com:abc", "host": "logon.example.com", "port": 3724}
+  ]
+}

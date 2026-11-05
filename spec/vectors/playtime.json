@@ -1,0 +1,10 @@
+{
+  "description": "FormatPlaytime(seconds) -> text. Whole hours, then remaining whole minutes.",
+  "cases": [
+    {"seconds": 0, "text": "0h 0m"},
+    {"seconds": 59, "text": "0h 0m"},
+    {"seconds": 3600, "text": "1h 0m"},
+    {"seconds": 3661, "text": "1h 1m"},
+    {"seconds": 90000, "text": "25h 0m"}
+  ]
+}
