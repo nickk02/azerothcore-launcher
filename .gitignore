@@ -27,3 +27,7 @@ windows/*_h.h
 
 # Internal task-execution progress tracking, not part of the shipped app.
 .superpowers/
+
+# macOS build output
+/macos/.build/
+/macos/dist/

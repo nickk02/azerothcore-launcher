@@ -1,6 +1,6 @@
 # AzerothCore Launcher
 
-A small Windows launcher for World of Warcraft 3.3.5a (Wrath of the Lich King)
+A small launcher for Windows and macOS for World of Warcraft 3.3.5a (Wrath of the Lich King)
 private servers, including any AzerothCore realm. You enter your server's
 address once. The launcher then writes the realmlist, shows whether the realm
 is online, remembers your account name, and starts the game.
@@ -27,6 +27,20 @@ is online, remembers your account name, and starts the game.
    end, or keep it where it is and point the launcher at it in step 5.
 5. Start the launcher. Click **Browse** and pick `Wow.exe` from your client
    folder.
+
+## macOS
+
+Download `AzerothCore.dmg` from [Releases](../../releases) and drag the app to
+Applications. The app is not notarized, so on first launch right-click it and
+choose **Open**. It needs macOS 13 or later.
+
+The 3.3.5a client is a Windows program, so the Mac app starts it through
+Wine. Install Wine (for example `brew install --cask --no-quarantine wine-stable`)
+or CrossOver first. Pick `Wow.exe` with **Browse**. The app does not type your
+login into the game; it only remembers it in the Keychain and fills its own
+fields.
+
+To build it, run `./build.sh` in `macos/` (needs Xcode).
 
 ## Set your server's realmlist
 
