@@ -17,7 +17,7 @@ Use a `vMAJOR.MINOR.PATCH` tag. The workflow rejects any other shape, because
 ## Before you tag
 
 - `main` is green.
-- `.\tools\run-tests.ps1` passes on your machine.
+- `.\windows\tools\run-tests.ps1` passes on your machine.
 - The app starts and the panel draws. CI proves that the code compiles. No
   workflow starts the user interface.
 
@@ -52,8 +52,8 @@ If you build by hand, supply both.
 ## Check a finished release
 
 ```powershell
-(Get-Item dist\AzerothCoreSetup.exe).VersionInfo.FileVersion
-(Get-Item x64\Release\azerothcore\azerothcore.exe).VersionInfo.FileVersion
+(Get-Item windows\dist\AzerothCoreSetup.exe).VersionInfo.FileVersion
+(Get-Item windows\x64\Release\azerothcore\azerothcore.exe).VersionInfo.FileVersion
 ```
 
 Both must show the tag without the leading `v`. The launcher shows the second

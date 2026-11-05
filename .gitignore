@@ -5,20 +5,20 @@
 /_mockup-preview.html
 
 # Build output
-/bin/
-/obj/
-/x64/
-/Generated Files/
-/dist/
-/packages/
+/windows/bin/
+/windows/obj/
+/windows/x64/
+/windows/Generated Files/
+/windows/dist/
+/windows/packages/
 
 # MSBuild resolves the IntDir for direct `msbuild azerothcore.vcxproj` builds
 # (no .sln in play) to a nested /azerothcore/x64/... rather than the top-level
 # /x64/ this file already ignores, and MIDLRT drops its generated *_h.h
 # headers in the working directory instead of Generated Files/. Both are pure
 # build byproducts, regenerated on every build.
-/azerothcore/
-*_h.h
+/windows/azerothcore/
+windows/*_h.h
 
 # Loose object files and test executables from ad-hoc compilation
 *.obj

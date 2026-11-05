@@ -19,6 +19,10 @@ jobs:
   release:
     runs-on: windows-latest
 
+    defaults:
+      run:
+        working-directory: windows
+
     steps:
       - uses: actions/checkout@v7
         with:
@@ -110,6 +114,6 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: |
-            dist/AzerothCoreSetup.exe
-            dist/AzerothCoreSetup.exe.sha256
+            windows/dist/AzerothCoreSetup.exe
+            windows/dist/AzerothCoreSetup.exe.sha256
           fail_on_unmatched_files: true
