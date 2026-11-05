@@ -66,3 +66,27 @@ jobs:
           path: windows/x64/Release/azerothcore/
           retention-days: 14
           if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: macos
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Test
+        run: swift test
+
+      - name: Build app and DMG
+        run: ./build.sh
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v7
+        with:
+          name: azerothcore-launcher-macos
+          path: macos/dist/AzerothCore.dmg
+          retention-days: 14
+          if-no-files-found: error

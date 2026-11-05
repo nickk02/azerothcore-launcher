@@ -117,3 +117,41 @@ jobs:
             windows/dist/AzerothCoreSetup.exe
             windows/dist/AzerothCoreSetup.exe.sha256
           fail_on_unmatched_files: true
+
+  release-macos:
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: macos
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Resolve version from tag
+        id: version
+        run: |
+          tag='${{ github.event.inputs.tag || github.ref_name }}'
+          version="${tag#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag '$tag' is not vMAJOR.MINOR.PATCH-shaped." >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: swift test
+
+      - name: Build app and DMG
+        run: ./build.sh ${{ steps.version.outputs.version }}
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            macos/dist/AzerothCore.dmg
+            macos/dist/AzerothCore.dmg.sha256
+          fail_on_unmatched_files: true
