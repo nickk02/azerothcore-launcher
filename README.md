@@ -71,11 +71,12 @@ checksum for the file if you want to check it yourself.
 You need Visual Studio 2022 or later with the C++ workload and the Windows SDK.
 
 ```
+cd windows
 nuget restore azerothcore.slnx
 msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64
 ```
 
-The build writes a self-contained deployment to `x64\Release\azerothcore\`.
+The build writes a self-contained deployment to `windows\x64\Release\azerothcore\`.
 
 ### Version numbers
 
@@ -116,17 +117,17 @@ unreachable.
 
 ### Artwork
 
-`Assets/` holds original art made for this project (hero, wordmark, icon). The
+`windows/Assets/` holds original art made for this project (hero, wordmark, icon). The
 build still works without it, with no art and no build error, so both CI
 workflows check that the four files exist.
 
 ## Tests
 
 ```
-.\tools\run-tests.ps1
+.\windows\tools\run-tests.ps1
 ```
 
-Each file in `Core/*Tests.cpp` is a separate program with its own `main()`.
+Each file in `windows/Core/*Tests.cpp` is a separate program with its own `main()`.
 Each one tests a single component. These files are not part of
 `azerothcore.vcxproj`, because a WinUI application cannot link five extra
 `main` functions.
