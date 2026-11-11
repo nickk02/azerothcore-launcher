@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Test
-        run: cargo test --release
+        run: cargo test --workspace --release
 
       - name: Build
         run: cargo build --release
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Test
-        run: cargo test --release
+        run: cargo test --workspace --release
 
       - name: Build app and DMG
         run: scripts/build-macos.sh
@@ -49,5 +49,23 @@ jobs:
         with:
           name: azerothcore-launcher-macos
           path: dist/AzerothCore.dmg
+          retention-days: 14
+          if-no-files-found: error
+
+  gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Test
+        run: cargo test --workspace --release
+
+      - name: Build gateway
+        run: cargo build --release -p azerothcore-gateway
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: azerothcore-gateway-linux
+          path: target/release/azerothcore-gateway
           retention-days: 14
           if-no-files-found: error

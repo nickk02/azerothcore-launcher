@@ -24,6 +24,9 @@ pub fn check(address: &str) -> Reachability {
     if text.is_empty() {
         return Reachability::Unconfigured;
     }
+    if let Some(base) = crate::tunnel::gateway_url(text) {
+        return if crate::tunnel::check(&base) { Reachability::Online } else { Reachability::Unreachable };
+    }
     let (host, port) = parse(text);
     if host.is_empty() {
         return Reachability::Unreachable;

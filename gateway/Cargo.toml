@@ -1,0 +1,19 @@
+[package]
+name = "azerothcore-gateway"
+version = "0.0.0"
+edition = "2021"
+description = "WebSocket-to-TCP gateway for AzerothCore, meant to sit behind a Cloudflare Tunnel"
+license = "MIT"
+
+[lib]
+name = "gateway"
+path = "src/lib.rs"
+
+[[bin]]
+name = "azerothcore-gateway"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "macros", "sync"] }
+tokio-tungstenite = "0.24"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }

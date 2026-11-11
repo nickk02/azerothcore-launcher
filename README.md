@@ -56,6 +56,16 @@ folder copies, if you have them) for you. You do not edit that file by hand.
 The status line above the account field shows **Online** or **Unreachable**
 for the address you typed.
 
+## Playing on a realm behind a Cloudflare Tunnel
+
+If the realm's admin hosts it through a Cloudflare Tunnel (no public IP or VPS),
+they give you an address that starts with `wss://`, for example
+`wss://play.example.com`. Type it into **Realm address** like any other. The
+launcher then listens on `127.0.0.1` ports 3724 and 8085 and carries the game's
+traffic to the realm for you. Nothing else needs installing, and no Cloudflare
+account is needed. Keep those two ports free, and do not run a local server on
+them.
+
 ## If it will not start
 
 **"That isn't a 3.3.5a Wow.exe" or "Failed to launch WoW".** You picked the
@@ -86,7 +96,7 @@ logic (settings, realm check, realmlist, launch, updates, credentials) and
 You need [Rust](https://rustup.rs) (stable).
 
 ```
-cargo test
+cargo test --workspace
 cargo run --release
 ```
 
@@ -94,6 +104,37 @@ The Windows exe is statically linked, so it needs no runtime. Windows builds
 use the MSVC toolchain. To build the macOS app and DMG, run
 `scripts/build-macos.sh` on a Mac. The Windows installer is built from
 `installer/installer.iss` with Inno Setup.
+
+### Hosting without a VPS (gateway)
+
+Cloudflare's edge carries only HTTP(S) for a public hostname, and the WoW client
+speaks plain TCP. The `gateway/` crate bridges the two: it accepts WebSocket
+connections and forwards each one to the login or world server, byte for byte.
+
+```
+azerothcore-gateway --listen 127.0.0.1:8080 --auth 127.0.0.1:3724 --world 127.0.0.1:8085
+```
+
+Then point a Cloudflare Tunnel published application at it. Use one hostname, for
+example `play.example.com`, with service `http://localhost:8080`. The gateway
+serves `/auth` and `/world`. On the AzerothCore auth database, the realm must
+point at the player's local proxy:
+
+```sql
+UPDATE realmlist SET address = '127.0.0.1', localAddress = '127.0.0.1', port = 8085 WHERE id = 1;
+```
+
+Players use `wss://play.example.com` as their realm address. The launcher starts a
+local proxy on 127.0.0.1:3724 and :8085, wraps each game connection in a
+WebSocket to `/auth` or `/world`, and writes `127.0.0.1` into the realmlist. It
+only works through this launcher, not the stock client. Expect a little extra
+latency from the extra hop. The proxy pings every 25 seconds so Cloudflare does
+not drop idle connections.
+
+`cargo test --workspace` covers this on loopback: a mock game server, the gateway,
+the launcher proxy and a TCP client, including a 2 MB stream, 40 concurrent
+connections, close propagation both ways, and the `wss://` TLS path with a
+throwaway certificate. It does not cover Cloudflare itself.
 
 ### Version numbers
 
