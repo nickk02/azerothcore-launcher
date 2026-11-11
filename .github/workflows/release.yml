@@ -36,7 +36,7 @@ jobs:
 
       # A release must never ship code whose tests were not run.
       - name: Test
-        run: cargo test --release
+        run: cargo test --workspace --release
 
       - name: Build
         run: cargo build --release
@@ -97,7 +97,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        run: cargo test --release
+        run: cargo test --workspace --release
 
       - name: Build app and DMG
         run: scripts/build-macos.sh ${{ steps.version.outputs.version }}
@@ -109,4 +109,29 @@ jobs:
           files: |
             dist/AzerothCore.dmg
             dist/AzerothCore.dmg.sha256
+          fail_on_unmatched_files: true
+
+  release-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Test
+        run: cargo test --workspace --release
+
+      - name: Build gateway
+        run: |
+          cargo build --release -p azerothcore-gateway
+          cp target/release/azerothcore-gateway azerothcore-gateway-linux-x86_64
+          sha256sum azerothcore-gateway-linux-x86_64 > azerothcore-gateway-linux-x86_64.sha256
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            azerothcore-gateway-linux-x86_64
+            azerothcore-gateway-linux-x86_64.sha256
           fail_on_unmatched_files: true

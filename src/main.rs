@@ -5,7 +5,7 @@
 //! centred on the page, and a 372 px field column on the right.
 
 use eframe::egui::{self, Color32, FontData, FontDefinitions, FontFamily, FontId, RichText};
-use launcher_core::{autofill, config::Config, creds, play, realm::{self, Reachability}, update};
+use launcher_core::{autofill, config::Config, creds, play, realm::{self, Reachability}, tunnel::{self, Tunnel}, update};
 use std::path::Path;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
@@ -23,7 +23,8 @@ const TEXT: Color32 = Color32::from_rgb(0xDC, 0xE4, 0xF2);
 const ERROR: Color32 = Color32::from_rgb(0xFF, 0x9B, 0x9B);
 const INK: Color32 = Color32::from_rgb(0x0A, 0x0A, 0x0A);
 
-const WINDOW: [f32; 2] = [1100.0, 720.0];
+// The original window was 1100x720 including a 44 px title bar, so the page itself is 1100x676.
+const WINDOW: [f32; 2] = [1100.0, 676.0];
 const PANEL_W: f32 = 372.0;
 const SEMIBOLD: &str = "semibold";
 
@@ -167,6 +168,8 @@ struct App {
     checked_realm: Option<String>,
     content_h: f32,
     loading: bool,
+    /// Local proxy for gateway (wss://) realms; lives as long as the launcher.
+    tunnel: Option<(String, Tunnel)>,
 }
 
 impl App {
@@ -197,6 +200,7 @@ impl App {
             checked_realm: None,
             content_h: 560.0,
             loading: false,
+            tunnel: None,
         }
     }
 
@@ -224,7 +228,22 @@ impl App {
             let _ = creds::store(&self.account, &self.password);
         }
         self.save();
-        let cfg_realm = self.realm.trim().to_string();
+        let mut cfg_realm = self.realm.trim().to_string();
+        // A gateway address (wss://...) is reached through a local proxy, so the game
+        // is pointed at 127.0.0.1 and the proxy carries it the rest of the way.
+        if let Some(base) = tunnel::gateway_url(&cfg_realm) {
+            if self.tunnel.as_ref().map(|(b, _)| b != &base).unwrap_or(true) {
+                self.tunnel = None; // free the ports before rebinding
+                match Tunnel::start(&base) {
+                    Ok(t) => self.tunnel = Some((base, t)),
+                    Err(_) => {
+                        self.error = "Could not start the local connection. Ports 3724, 8085 and 8086 must be free.".into();
+                        return;
+                    }
+                }
+            }
+            cfg_realm = tunnel::LOCAL_ADDRESS.to_string();
+        }
         if let Err(e) = play::launch(&self.wow_path, &cfg_realm) {
             self.error = e;
             return;
