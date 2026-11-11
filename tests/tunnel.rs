@@ -3,6 +3,7 @@
 //! minus Cloudflare itself.
 
 use gateway::{serve, Routes};
+use std::collections::BTreeMap;
 use launcher_core::tunnel::{self, Tunnel};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -34,26 +35,35 @@ struct Rig {
     _tunnel: Tunnel,
     base: String,
     auth: SocketAddr,
+    /// Two realms, as on the live server: public ports 8085 and 8086.
     world: SocketAddr,
+    world2: SocketAddr,
+}
+
+fn eph() -> SocketAddr { "127.0.0.1:0".parse().unwrap() }
+
+fn routes(auth: SocketAddr, worlds: &[(u16, SocketAddr)]) -> Routes {
+    Routes { auth: auth.to_string(), worlds: worlds.iter().map(|(p, a)| (*p, a.to_string())).collect::<BTreeMap<_, _>>() }
 }
 
 fn rig() -> Rig {
     let auth_server = mock_server(b"AUTH");
     let world_server = mock_server(b"WORLD");
+    let world2_server = mock_server(b"ILLIDAN");
 
     let gw = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let gw_addr = gw.local_addr().unwrap();
     gw.set_nonblocking(true).unwrap();
-    let routes = Routes { auth: auth_server.to_string(), world: world_server.to_string() };
+    let routes = routes(auth_server, &[(8085, world_server), (8086, world2_server)]);
     thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap();
         rt.block_on(async { serve(tokio::net::TcpListener::from_std(gw).unwrap(), routes).await });
     });
 
     let base = format!("ws://{gw_addr}");
-    let tunnel = Tunnel::start_on(&base, "127.0.0.1:0".parse().unwrap(), "127.0.0.1:0".parse().unwrap()).unwrap();
-    let (auth, world) = (tunnel.auth_addr, tunnel.world_addr);
-    Rig { _tunnel: tunnel, base, auth, world }
+    let tunnel = Tunnel::start_on(&base, eph(), &[(8085, eph()), (8086, eph())]).unwrap();
+    let (auth, world, world2) = (tunnel.auth_addr, tunnel.world_addrs[0], tunnel.world_addrs[1]);
+    Rig { _tunnel: tunnel, base, auth, world, world2 }
 }
 
 fn client(addr: SocketAddr) -> TcpStream {
@@ -73,6 +83,7 @@ fn auth_and_world_reach_the_right_servers() {
     let rig = rig();
     assert_eq!(read_exact(&mut client(rig.auth), 4), b"AUTH");
     assert_eq!(read_exact(&mut client(rig.world), 5), b"WORLD");
+    assert_eq!(read_exact(&mut client(rig.world2), 7), b"ILLIDAN");
 }
 
 #[test]
@@ -133,9 +144,9 @@ fn server_closing_closes_the_client() {
     gw.set_nonblocking(true).unwrap();
     thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(1).enable_all().build().unwrap();
-        rt.block_on(async { serve(tokio::net::TcpListener::from_std(gw).unwrap(), Routes { auth: addr.to_string(), world: addr.to_string() }).await });
+        rt.block_on(async { serve(tokio::net::TcpListener::from_std(gw).unwrap(), routes(addr, &[(8085, addr)])).await });
     });
-    let t = Tunnel::start_on(&format!("ws://{gw_addr}"), "127.0.0.1:0".parse().unwrap(), "127.0.0.1:0".parse().unwrap()).unwrap();
+    let t = Tunnel::start_on(&format!("ws://{gw_addr}"), eph(), &[(8085, eph())]).unwrap();
     let mut c = client(t.auth_addr);
     let mut all = Vec::new();
     c.read_to_end(&mut all).unwrap(); // returns only if the close propagated
@@ -160,9 +171,9 @@ fn client_closing_closes_the_server_side() {
     gw.set_nonblocking(true).unwrap();
     thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(1).enable_all().build().unwrap();
-        rt.block_on(async { serve(tokio::net::TcpListener::from_std(gw).unwrap(), Routes { auth: addr.to_string(), world: addr.to_string() }).await });
+        rt.block_on(async { serve(tokio::net::TcpListener::from_std(gw).unwrap(), routes(addr, &[(8085, addr)])).await });
     });
-    let t = Tunnel::start_on(&format!("ws://{gw_addr}"), "127.0.0.1:0".parse().unwrap(), "127.0.0.1:0".parse().unwrap()).unwrap();
+    let t = Tunnel::start_on(&format!("ws://{gw_addr}"), eph(), &[(8085, eph())]).unwrap();
     let mut c = client(t.auth_addr);
     c.write_all(b"hello").unwrap();
     assert_eq!(rx.recv_timeout(Duration::from_secs(10)).unwrap(), 5);
@@ -179,15 +190,28 @@ fn status_check_reports_gateway_state() {
     assert_eq!(launcher_core::realm::check("ws://127.0.0.1:1"), launcher_core::realm::Reachability::Unreachable);
 }
 
+/// Opens a WebSocket to exactly `url` and reports whether the gateway accepted the upgrade.
+fn ws_accepts(url: &str) -> bool {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async { tokio_tungstenite::connect_async(url).await.is_ok() })
+}
+
 #[test]
-fn unknown_path_is_refused() {
+fn only_listed_paths_are_accepted() {
     let rig = rig();
-    assert!(!tunnel::check(&format!("{}/nope", rig.base)));
+    // Positive controls: the real paths work through the same helper.
+    assert!(ws_accepts(&format!("{}/auth", rig.base)));
+    assert!(ws_accepts(&format!("{}/world/8085", rig.base)));
+    assert!(ws_accepts(&format!("{}/world/8086", rig.base)));
+    // Everything else is refused, so the gateway is not an open TCP relay.
+    for path in ["/", "/nope", "/world", "/world/", "/world/9999", "/world/abc", "/world/8085/x", "/auth/x"] {
+        assert!(!ws_accepts(&format!("{}{path}", rig.base)), "{path} should be refused");
+    }
 }
 
 #[test]
 fn port_clash_is_reported() {
     let held = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = held.local_addr().unwrap();
-    assert!(Tunnel::start_on("ws://127.0.0.1:1", addr, "127.0.0.1:0".parse().unwrap()).is_err());
+    assert!(Tunnel::start_on("ws://127.0.0.1:1", addr, &[(8085, eph())]).is_err());
 }

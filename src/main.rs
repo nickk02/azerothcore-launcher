@@ -237,7 +237,7 @@ impl App {
                 match Tunnel::start(&base) {
                     Ok(t) => self.tunnel = Some((base, t)),
                     Err(_) => {
-                        self.error = "Could not start the local connection. Ports 3724 and 8085 must be free.".into();
+                        self.error = "Could not start the local connection. Ports 3724, 8085 and 8086 must be free.".into();
                         return;
                     }
                 }

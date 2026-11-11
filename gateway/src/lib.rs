@@ -5,10 +5,12 @@
 //! this gateway (running next to the server, behind `cloudflared`) unwraps it:
 //! every binary message is a chunk of the TCP stream, in order.
 //!
-//! `/auth` goes to the login server and `/world` to the world server. The servers
-//! themselves are unchanged.
+//! `/auth` goes to the login server and `/world/<port>` to the world server whose
+//! public port is `<port>` (one path per realm, since realms listen on different ports).
+//! The servers themselves are unchanged.
 
 use futures_util::{SinkExt, StreamExt};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
@@ -21,7 +23,18 @@ use tokio_tungstenite::{accept_hdr_async, WebSocketStream};
 #[derive(Clone, Debug)]
 pub struct Routes {
     pub auth: String,
-    pub world: String,
+    /// World servers by the port clients know them by (the realmlist `port` column).
+    pub worlds: BTreeMap<u16, String>,
+}
+
+impl Routes {
+    fn target(&self, path: &str) -> Option<String> {
+        if path == "/auth" {
+            return Some(self.auth.clone());
+        }
+        let port: u16 = path.strip_prefix("/world/")?.parse().ok()?;
+        self.worlds.get(&port).cloned()
+    }
 }
 
 /// Keeps idle connections alive through Cloudflare, which drops quiet WebSockets.
@@ -77,10 +90,9 @@ async fn handle(stream: TcpStream, routes: Arc<Routes>) -> Result<(), Box<dyn st
     stream.set_nodelay(true)?;
     let mut target: Option<String> = None;
     let ws = accept_hdr_async(stream, |req: &Request, resp: Response| -> Result<Response, ErrorResponse> {
-        match req.uri().path() {
-            "/auth" => { target = Some(routes.auth.clone()); Ok(resp) }
-            "/world" => { target = Some(routes.world.clone()); Ok(resp) }
-            _ => Err(http::Response::builder().status(404).body(Some("not found".to_string())).unwrap()),
+        match routes.target(req.uri().path()) {
+            Some(t) => { target = Some(t); Ok(resp) }
+            None => Err(http::Response::builder().status(404).body(Some("not found".to_string())).unwrap()),
         }
     })
     .await?;

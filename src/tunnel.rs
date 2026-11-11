@@ -1,10 +1,11 @@
 //! Local proxy for realms served through a Cloudflare Tunnel.
 //!
 //! The WoW client only speaks plain TCP. When the realm address is a gateway URL
-//! (`wss://play.example.com`), the launcher listens on 127.0.0.1:3724 and :8085 and
-//! wraps each connection in a WebSocket to `<url>/auth` and `<url>/world`, where the
-//! gateway unwraps it. The realm's `address` column on the server must be 127.0.0.1
-//! so the world connection comes back through the same proxy.
+//! (`wss://play.example.com`), the launcher listens on 127.0.0.1:3724 and on each world
+//! port (8085, 8086) and wraps every connection in a WebSocket to `<url>/auth` or
+//! `<url>/world/<port>`, where the gateway unwraps it. Each realm's `address` in the
+//! server's realmlist table must be 127.0.0.1 so the world connection comes back through
+//! the same proxy, and its `port` picks which world listener the client uses.
 
 use gateway::{pump, PING_EVERY};
 use std::net::SocketAddr;
@@ -20,7 +21,8 @@ use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::{client_async, WebSocketStream};
 
 pub const AUTH_PORT: u16 = 3724;
-pub const WORLD_PORT: u16 = 8085;
+/// World ports the launcher listens on, one per realm (the realmlist `port` column).
+pub const WORLD_PORTS: [u16; 2] = [8085, 8086];
 /// What the realmlist must say when the tunnel is in use.
 pub const LOCAL_ADDRESS: &str = "127.0.0.1";
 
@@ -105,25 +107,33 @@ pub fn check(base: &str) -> bool {
 pub struct Tunnel {
     runtime: Option<Runtime>,
     pub auth_addr: SocketAddr,
-    pub world_addr: SocketAddr,
+    /// One local listener per world port, in the order given.
+    pub world_addrs: Vec<SocketAddr>,
 }
 
 impl Tunnel {
     /// Starts listening on the standard ports.
     pub fn start(base: &str) -> std::io::Result<Self> {
-        Self::start_on(base, ([127, 0, 0, 1], AUTH_PORT).into(), ([127, 0, 0, 1], WORLD_PORT).into())
+        let worlds: Vec<(u16, SocketAddr)> = WORLD_PORTS.iter().map(|&p| (p, SocketAddr::from(([127, 0, 0, 1], p)))).collect();
+        Self::start_on(base, ([127, 0, 0, 1], AUTH_PORT).into(), &worlds)
     }
 
-    pub fn start_on(base: &str, auth: SocketAddr, world: SocketAddr) -> std::io::Result<Self> {
-        // Bind first so a port clash is reported to the caller, not lost in a task.
-        let auth_l = std::net::TcpListener::bind(auth)?;
-        let world_l = std::net::TcpListener::bind(world)?;
-        auth_l.set_nonblocking(true)?;
-        world_l.set_nonblocking(true)?;
-        let (auth_addr, world_addr) = (auth_l.local_addr()?, world_l.local_addr()?);
+    /// `worlds` pairs each realm's public port (used in the gateway path) with the local
+    /// address to listen on. They differ only in tests, which bind ephemeral ports.
+    pub fn start_on(base: &str, auth: SocketAddr, worlds: &[(u16, SocketAddr)]) -> std::io::Result<Self> {
+        // Bind everything first so a port clash is reported to the caller, not lost in a task.
+        let mut listeners = vec![(std::net::TcpListener::bind(auth)?, "/auth".to_string())];
+        for (public, bind) in worlds {
+            listeners.push((std::net::TcpListener::bind(bind)?, format!("/world/{public}")));
+        }
+        let mut addrs = Vec::new();
+        for (l, _) in &listeners {
+            l.set_nonblocking(true)?;
+            addrs.push(l.local_addr()?);
+        }
 
         let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build()?;
-        for (listener, path) in [(auth_l, "/auth"), (world_l, "/world")] {
+        for (listener, path) in listeners {
             let url = format!("{base}{path}");
             let listener = {
                 let _guard = runtime.enter();
@@ -143,7 +153,7 @@ impl Tunnel {
                 }
             });
         }
-        Ok(Self { runtime: Some(runtime), auth_addr, world_addr })
+        Ok(Self { runtime: Some(runtime), auth_addr: addrs[0], world_addrs: addrs[1..].to_vec() })
     }
 }
 
