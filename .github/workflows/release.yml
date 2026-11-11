@@ -1,8 +1,6 @@
 name: release
 
-# Fires on a version tag and attaches the installer to the matching release.
-# The UI art is tracked in the repo, so this produces the complete product and
-# a tagged release needs no manual build step.
+# Fires on a version tag and attaches the installers to the matching release.
 on:
   push:
     tags: ['v*']
@@ -13,41 +11,18 @@ on:
         required: true
 
 permissions:
-  contents: write   # needed to upload the asset onto the release
+  contents: write   # needed to upload the assets onto the release
 
 jobs:
   release:
     runs-on: windows-latest
-
-    defaults:
-      run:
-        working-directory: windows
-
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v3
-
-      # A release with missing art would still build and still install; it just
-      # would not look like the product. Refuse rather than ship that.
-      - name: Verify UI assets are present
-        shell: pwsh
-        run: |
-          $required = 'hero.png', 'logo.png', 'icon.png', 'icon.ico'
-          $missing = $required | Where-Object { -not (Test-Path (Join-Path 'Assets' $_)) }
-          if ($missing) { throw "Missing UI assets: $($missing -join ', ')" }
-          Write-Host "All $($required.Count) UI assets present."
-
-      # Resolved BEFORE the build, because the application binary has to be
-      # stamped with it too. Doing this after the build produced a release whose
-      # installer said 2026.08.06 while the launcher inside it reported 0.0.0,
-      # which is the exact mismatch the version rework existed to kill.
-      #
-      # Deriving from the tag rather than the build date also means rebuilding
-      # an old tag reproduces that tag's version instead of today's.
+      # Resolved before the build because the exe is stamped with it. The
+      # launcher compares it against the latest release to decide on updates.
       - name: Resolve version from tag
         id: version
         shell: pwsh
@@ -55,76 +30,56 @@ jobs:
           $tag = '${{ github.event.inputs.tag || github.ref_name }}'
           $version = $tag -replace '^v', ''
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
-            throw "Tag '$tag' is not vMAJOR.MINOR.PATCH-shaped; installer version would be invalid."
+            throw "Tag '$tag' is not vMAJOR.MINOR.PATCH-shaped."
           }
           "version=$version" >> $env:GITHUB_OUTPUT
-          Write-Host "Release version: $version"
-
-      - name: Restore NuGet packages
-        run: nuget restore azerothcore.slnx
-
-      # /p:AcVersion stamps app.rc's VERSIONINFO, which is what the launcher
-      # reads back at runtime to show its own version.
-      - name: Build (Release x64)
-        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /p:AcVersion=${{ steps.version.outputs.version }} /m /v:minimal
 
       # A release must never ship code whose tests were not run.
-      - name: Run Core tests
-        shell: pwsh
-        run: .\tools\run-tests.ps1
+      - name: Test
+        run: cargo test --release
 
-      # Belt and braces: the installer and the application derive their versions
-      # through completely separate mechanisms (ISCC /D versus msbuild /p), so
-      # nothing but an explicit check catches them drifting apart again.
+      - name: Build
+        run: cargo build --release
+        env:
+          AC_VERSION: ${{ steps.version.outputs.version }}
+
       - name: Verify the binary carries the release version
         shell: pwsh
         run: |
           $expected = '${{ steps.version.outputs.version }}'
-          $actual = (Get-Item 'x64\Release\azerothcore\azerothcore.exe').VersionInfo.FileVersion
+          $actual = (Get-Item 'target\release\azerothcore.exe').VersionInfo.FileVersion
           if ($actual -ne $expected) {
             throw "azerothcore.exe reports version '$actual' but the tag says '$expected'."
           }
-          Write-Host "azerothcore.exe reports $actual"
 
       - name: Build the installer
         shell: pwsh
         run: |
-          # Inno Setup is not preinstalled on the runner image. Do not pin the
-          # major version in the path: choco ships whatever is current (6 today,
-          # 7 on the maintainer's box) and a hardcoded "Inno Setup 6" breaks
-          # silently the day that changes.
           choco install innosetup --no-progress -y
           $iscc = Get-ChildItem -Path @("${env:ProgramFiles(x86)}", $env:ProgramFiles) `
                                 -Filter ISCC.exe -Recurse -Depth 2 -ErrorAction SilentlyContinue |
                   Select-Object -First 1 -ExpandProperty FullName
           if (-not $iscc) { throw 'ISCC.exe not found after installing innosetup.' }
-          Write-Host "Using $iscc"
-          & $iscc /DMyAppVersion=${{ steps.version.outputs.version }} installer.iss
+          & $iscc /DMyAppVersion=${{ steps.version.outputs.version }} installer\installer.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
 
       - name: Publish checksum
         shell: pwsh
         run: |
-          $hash = (Get-FileHash dist\AzerothCoreSetup.exe -Algorithm SHA256).Hash
-          "$hash  AzerothCoreSetup.exe" | Set-Content dist\AzerothCoreSetup.exe.sha256
-          Write-Host "SHA256 $hash"
+          $hash = (Get-FileHash installer\dist\AzerothCoreSetup.exe -Algorithm SHA256).Hash
+          "$hash  AzerothCoreSetup.exe" | Set-Content installer\dist\AzerothCoreSetup.exe.sha256
 
       - name: Attach to the release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: |
-            windows/dist/AzerothCoreSetup.exe
-            windows/dist/AzerothCoreSetup.exe.sha256
+            installer/dist/AzerothCoreSetup.exe
+            installer/dist/AzerothCoreSetup.exe.sha256
           fail_on_unmatched_files: true
 
   release-macos:
     runs-on: macos-latest
-
-    defaults:
-      run:
-        working-directory: macos
-
     steps:
       - uses: actions/checkout@v7
         with:
@@ -142,16 +97,16 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        run: swift test
+        run: cargo test --release
 
       - name: Build app and DMG
-        run: ./build.sh ${{ steps.version.outputs.version }}
+        run: scripts/build-macos.sh ${{ steps.version.outputs.version }}
 
       - name: Attach to the release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: |
-            macos/dist/AzerothCore.dmg
-            macos/dist/AzerothCore.dmg.sha256
+            dist/AzerothCore.dmg
+            dist/AzerothCore.dmg.sha256
           fail_on_unmatched_files: true

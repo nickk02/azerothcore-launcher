@@ -10,7 +10,10 @@ const INSTALLER: &str = "AzerothCoreSetup.exe";
 #[cfg(not(windows))]
 const INSTALLER: &str = "AzerothCore.dmg";
 
-pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CURRENT_VERSION: &str = match option_env!("AC_VERSION") {
+    Some(v) => v,
+    None => "0.0.0-dev",
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct UpdateInfo {
