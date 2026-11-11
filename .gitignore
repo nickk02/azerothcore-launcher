@@ -1,33 +1,3 @@
-/Launcher.exe
-/wow-launcher.PNG
-
-# Local design scratch, not part of the shipped app.
-/_mockup-preview.html
-
-# Build output
-/windows/bin/
-/windows/obj/
-/windows/x64/
-/windows/Generated Files/
-/windows/dist/
-/windows/packages/
-
-# MSBuild resolves the IntDir for direct `msbuild azerothcore.vcxproj` builds
-# (no .sln in play) to a nested /azerothcore/x64/... rather than the top-level
-# /x64/ this file already ignores, and MIDLRT drops its generated *_h.h
-# headers in the working directory instead of Generated Files/. Both are pure
-# build byproducts, regenerated on every build.
-/windows/azerothcore/
-windows/*_h.h
-
-# Loose object files and test executables from ad-hoc compilation
-*.obj
-*_test.exe
-*Tests.exe
-
-# Internal task-execution progress tracking, not part of the shipped app.
-.superpowers/
-
-# macOS build output
-/macos/.build/
-/macos/dist/
+/target/
+/dist/
+/installer/dist/

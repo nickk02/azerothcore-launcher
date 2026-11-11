@@ -1,7 +1,6 @@
 name: build
 
-# Every push and PR to main. Until this existed the only thing standing between
-# a broken commit and main was somebody happening to build locally.
+# Every push and PR to main.
 on:
   push:
     branches: [main]
@@ -13,80 +12,42 @@ permissions:
   contents: read
 
 concurrency:
-  # A newer push to the same branch makes an in-flight run pointless.
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
-
-    defaults:
-      run:
-        working-directory: windows
-
     steps:
       - uses: actions/checkout@v7
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v3
+      - name: Test
+        run: cargo test --release
 
-      # The UI art is tracked, so CI builds the same product a developer does.
-      # Fail loudly if any of it goes missing rather than silently producing an
-      # art-free build that looks fine until someone launches it: the project
-      # tolerates absent assets by design (wildcard Content item, conditional
-      # icon resource), which is exactly what would hide the mistake.
-      - name: Verify UI assets are present
-        shell: pwsh
-        run: |
-          $required = 'hero.png', 'logo.png', 'icon.png', 'icon.ico'
-          $missing = $required | Where-Object { -not (Test-Path (Join-Path 'Assets' $_)) }
-          if ($missing) {
-            throw "Missing UI assets: $($missing -join ', '). The build would silently produce an art-free launcher."
-          }
-          Write-Host "All $($required.Count) UI assets present."
+      - name: Build
+        run: cargo build --release
 
-      - name: Restore NuGet packages
-        run: nuget restore azerothcore.slnx
-
-      - name: Build (Release x64)
-        run: msbuild azerothcore.vcxproj /p:Configuration=Release /p:Platform=x64 /m /v:minimal
-
-      # The Core suites are standalone programs with their own main(), built by
-      # this script rather than by the vcxproj. See tools/run-tests.ps1 for why,
-      # and for the NDEBUG trap that would silently neuter every assert.
-      - name: Run Core tests
-        shell: pwsh
-        run: .\tools\run-tests.ps1
-
-      - name: Upload build output
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
-          name: azerothcore-launcher-x64
-          path: windows/x64/Release/azerothcore/
+          name: azerothcore-launcher-windows
+          path: target/release/azerothcore.exe
           retention-days: 14
           if-no-files-found: error
 
   macos:
     runs-on: macos-latest
-
-    defaults:
-      run:
-        working-directory: macos
-
     steps:
       - uses: actions/checkout@v7
 
       - name: Test
-        run: swift test
+        run: cargo test --release
 
       - name: Build app and DMG
-        run: ./build.sh
+        run: scripts/build-macos.sh
 
-      - name: Upload build output
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
           name: azerothcore-launcher-macos
-          path: macos/dist/AzerothCore.dmg
+          path: dist/AzerothCore.dmg
           retention-days: 14
           if-no-files-found: error
