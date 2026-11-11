@@ -23,7 +23,8 @@ const TEXT: Color32 = Color32::from_rgb(0xDC, 0xE4, 0xF2);
 const ERROR: Color32 = Color32::from_rgb(0xFF, 0x9B, 0x9B);
 const INK: Color32 = Color32::from_rgb(0x0A, 0x0A, 0x0A);
 
-const WINDOW: [f32; 2] = [1100.0, 720.0];
+// The original window was 1100x720 including a 44 px title bar, so the page itself is 1100x676.
+const WINDOW: [f32; 2] = [1100.0, 676.0];
 const PANEL_W: f32 = 372.0;
 const SEMIBOLD: &str = "semibold";
 
