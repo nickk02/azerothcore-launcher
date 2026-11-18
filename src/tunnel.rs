@@ -184,7 +184,7 @@ mod tests {
         let server_cfg = ServerConfig::builder_with_provider(provider.clone())
             .with_safe_default_protocol_versions().unwrap()
             .with_no_client_auth()
-            .with_single_cert(vec![cert.cert.der().clone()], PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert.key_pair.serialize_der())))
+            .with_single_cert(vec![cert.cert.der().clone()], PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert.signing_key.serialize_der())))
             .unwrap();
         let mut roots = RootCertStore::empty();
         roots.add(cert.cert.der().clone()).unwrap();
@@ -203,14 +203,14 @@ mod tests {
                 let tls = acceptor.accept(tcp).await.unwrap();
                 let mut ws = tokio_tungstenite::accept_async(tls).await.unwrap();
                 while let Some(Ok(Message::Binary(b))) = ws.next().await {
-                    let _ = ws.send(Message::Binary(b.iter().map(|x| x.wrapping_add(1)).collect())).await;
+                    let _ = ws.send(Message::Binary(b.iter().map(|x| x.wrapping_add(1)).collect::<Vec<u8>>().into())).await;
                 }
             });
 
             let mut ws = connect_with(&format!("wss://localhost:{port}/auth"), client_cfg.clone()).await.unwrap();
-            ws.send(Message::Binary(vec![1, 2, 3])).await.unwrap();
+            ws.send(Message::Binary(vec![1u8, 2, 3].into())).await.unwrap();
             match ws.next().await {
-                Some(Ok(Message::Binary(b))) => assert_eq!(b, vec![2, 3, 4]),
+                Some(Ok(Message::Binary(b))) => assert_eq!(b.to_vec(), vec![2u8, 3, 4]),
                 other => panic!("unexpected: {other:?}"),
             }
 
@@ -225,7 +225,7 @@ mod tests {
             let acceptor2 = tokio_rustls::TlsAcceptor::from(Arc::new(
                 ServerConfig::builder_with_provider(Arc::new(tokio_rustls::rustls::crypto::ring::default_provider()))
                     .with_safe_default_protocol_versions().unwrap().with_no_client_auth()
-                    .with_single_cert(vec![cert.cert.der().clone()], PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert.key_pair.serialize_der()))).unwrap(),
+                    .with_single_cert(vec![cert.cert.der().clone()], PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(cert.signing_key.serialize_der()))).unwrap(),
             ));
             tokio::spawn(async move { if let Ok((tcp, _)) = listener2.accept().await { let _ = acceptor2.accept(tcp).await; } });
             let err = connect_with(&format!("wss://localhost:{port2}/auth"), untrusted).await.err().expect("must refuse");

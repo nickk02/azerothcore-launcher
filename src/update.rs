@@ -1,6 +1,5 @@
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use std::io::Read;
 use std::path::PathBuf;
 
 const API: &str = "https://api.github.com/repos/nickk02/azerothcore-launcher/releases/latest";
@@ -67,7 +66,7 @@ pub fn from_release(json: &str, current: &str) -> Option<UpdateInfo> {
 }
 
 pub fn check() -> UpdateInfo {
-    let body = ureq::get(API).set("User-Agent", "azerothcore-launcher").call().ok().and_then(|r| r.into_string().ok());
+    let body = ureq::get(API).header("User-Agent", "azerothcore-launcher").call().ok().and_then(|mut r| r.body_mut().read_to_string().ok());
     body.and_then(|b| from_release(&b, CURRENT_VERSION)).unwrap_or_default()
 }
 
@@ -81,15 +80,15 @@ pub fn verify(bytes: &[u8], checksum_file: &str) -> Result<(), String> {
 }
 
 fn download(url: &str) -> Result<Vec<u8>, String> {
-    let mut buf = Vec::new();
     ureq::get(url)
-        .set("User-Agent", "azerothcore-launcher")
+        .header("User-Agent", "azerothcore-launcher")
         .call()
         .map_err(|e| format!("Update failed: {e}"))?
-        .into_reader()
-        .read_to_end(&mut buf)
-        .map_err(|e| format!("Update failed: {e}"))?;
-    Ok(buf)
+        .body_mut()
+        .with_config()
+        .limit(200 * 1024 * 1024)
+        .read_to_vec()
+        .map_err(|e| format!("Update failed: {e}"))
 }
 
 /// Downloads the installer, checks its SHA-256, and opens it.
