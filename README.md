@@ -66,6 +66,10 @@ traffic to the realm for you. Nothing else needs installing, and no Cloudflare
 account is needed. Keep those ports free, and do not run a local server on
 them.
 
+## Your own artwork
+
+The launcher ships with original art. To use your own, put `hero.png`, `logo.png` and/or `icon.png` in `%APPDATA%\AzerothCorert` on Windows or `~/Library/Application Support/AzerothCore/art` on macOS, then restart the launcher. A file that is missing or is not a valid image is ignored.
+
 ## If it will not start
 
 **"That isn't a 3.3.5a Wow.exe" or "Failed to launch WoW".** You picked the

@@ -33,6 +33,16 @@ fn semibold(size: f32) -> FontId { FontId::new(size, FontFamily::Name(SEMIBOLD.i
 fn ease_out_cubic(p: f32) -> f32 { 1.0 - (1.0 - p.clamp(0.0, 1.0)).powi(3) }
 fn progress(t: f32, delay: f32, dur: f32) -> f32 { ((t - delay) / dur).clamp(0.0, 1.0) }
 
+/// Art the player supplied: `<config dir>/AzerothCore/art/<name>.png`, used instead of the bundled
+/// image when it decodes. The repository ships only original art; this lets a player use their own.
+fn art(name: &str, bundled: &[u8]) -> Vec<u8> {
+    let path = dirs::config_dir().unwrap_or_default().join("AzerothCore").join("art").join(format!("{name}.png"));
+    match std::fs::read(path) {
+        Ok(bytes) if image::load_from_memory(&bytes).is_ok() => bytes,
+        _ => bundled.to_vec(),
+    }
+}
+
 fn load_texture(ctx: &egui::Context, name: &str, bytes: &[u8], max_width: Option<u32>) -> egui::TextureHandle {
     let mut img = image::load_from_memory(bytes).expect("bundled image").to_rgba8();
     if let Some(w) = max_width.filter(|&w| img.width() > w) {
@@ -180,8 +190,8 @@ impl App {
         let (tx, update_rx) = channel();
         std::thread::spawn(move || { let _ = tx.send(update::check()); });
         Self {
-            hero: load_texture(ctx, "hero", HERO, Some(2048)),
-            logo: load_texture(ctx, "logo", LOGO, None),
+            hero: load_texture(ctx, "hero", &art("hero", HERO), Some(2048)),
+            logo: load_texture(ctx, "logo", &art("logo", LOGO), None),
             started: Instant::now(),
             wow_path: cfg.wow_path,
             realm: cfg.realm_address,
@@ -454,7 +464,7 @@ impl eframe::App for App {
 }
 
 fn main() -> eframe::Result<()> {
-    let icon = image::load_from_memory(ICON).ok().map(|i| {
+    let icon = image::load_from_memory(&art("icon", ICON)).ok().map(|i| {
         let i = i.to_rgba8();
         egui::IconData { width: i.width(), height: i.height(), rgba: i.into_raw() }
     });
