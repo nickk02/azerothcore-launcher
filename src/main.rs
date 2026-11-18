@@ -179,6 +179,7 @@ struct App {
     status_rx: Option<Receiver<(String, Reachability)>>,
     install_rx: Option<Receiver<Result<(), String>>>,
     autofill_rx: Option<Receiver<bool>>,
+    launch_rx: Option<Receiver<Result<(), String>>>,
     last_edit: Instant,
     checked_realm: Option<String>,
     content_h: f32,
@@ -212,6 +213,7 @@ impl App {
             status_rx: None,
             install_rx: None,
             autofill_rx: None,
+            launch_rx: None,
             last_edit: Instant::now() - Duration::from_secs(1),
             checked_realm: None,
             content_h: 560.0,
@@ -260,19 +262,26 @@ impl App {
             }
             cfg_realm = tunnel::LOCAL_ADDRESS.to_string();
         }
-        if let Err(e) = play::launch(&self.wow_path, &cfg_realm) {
-            self.error = e;
-            return;
-        }
-        // Windows types the login into the game's login screen. Prefer what was just typed.
-        if cfg!(windows) {
-            let login = if !self.password.is_empty() { Some((self.account.clone(), self.password.clone())) }
-                else if self.remember { creds::get() } else { None };
-            if let Some((account, password)) = login {
-                let (tx, rx) = channel();
-                std::thread::spawn(move || { let _ = tx.send(autofill::type_login(&account, &password)); });
-                self.autofill_rx = Some(rx);
-            }
+        // Starting the game can take a minute on a Mac the first time (Wine builds its
+        // prefix), so it runs off the UI thread.
+        self.error.clear();
+        self.loading = true;
+        self.realm_status = if play::prefix_ready() { "Starting WoW...".into() } else { "Setting up Wine, first run takes about a minute...".into() };
+        let (tx, rx) = channel();
+        let (path, realm) = (self.wow_path.clone(), cfg_realm);
+        std::thread::spawn(move || { let _ = tx.send(play::launch(&path, &realm)); });
+        self.launch_rx = Some(rx);
+    }
+
+    /// Windows types the login into the game's login screen. Prefer what was just typed.
+    fn start_autofill(&mut self) {
+        if !cfg!(windows) { return; }
+        let login = if !self.password.is_empty() { Some((self.account.clone(), self.password.clone())) }
+            else if self.remember { creds::get() } else { None };
+        if let Some((account, password)) = login {
+            let (tx, rx) = channel();
+            std::thread::spawn(move || { let _ = tx.send(autofill::type_login(&account, &password)); });
+            self.autofill_rx = Some(rx);
         }
     }
 
@@ -302,6 +311,17 @@ impl App {
                         self.version_text = format!("AzerothCore v{} (update v{} {})", update::CURRENT_VERSION, self.update.latest, why);
                         self.update.available = false;
                     }
+                }
+            }
+        }
+        if let Some(rx) = &self.launch_rx {
+            if let Ok(result) = rx.try_recv() {
+                self.launch_rx = None;
+                self.loading = false;
+                self.checked_realm = None; // refresh the status line
+                match result {
+                    Ok(()) => self.start_autofill(),
+                    Err(e) => self.error = e,
                 }
             }
         }
@@ -439,7 +459,7 @@ impl eframe::App for App {
             }
             child.add_space(14.0);
 
-            if button(&mut child, "Play", semibold(18.0), egui::vec2(w, 50.0), &PLAY).clicked() || enter {
+            if (button(&mut child, "Play", semibold(18.0), egui::vec2(w, 50.0), &PLAY).clicked() || enter) && !self.loading {
                 self.play();
             }
             if !self.error.is_empty() {
