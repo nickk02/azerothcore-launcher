@@ -71,9 +71,9 @@ where
             tokio::select! {
                 n = rd.read(&mut buf) => match n {
                     Ok(0) | Err(_) => break,
-                    Ok(n) => if sink.send(Message::Binary(buf[..n].to_vec())).await.is_err() { break },
+                    Ok(n) => if sink.send(Message::Binary(buf[..n].to_vec().into())).await.is_err() { break },
                 },
-                _ = tick.tick() => if sink.send(Message::Ping(Vec::new())).await.is_err() { break },
+                _ = tick.tick() => if sink.send(Message::Ping(Vec::new().into())).await.is_err() { break },
             }
         }
         let _ = sink.close().await;
