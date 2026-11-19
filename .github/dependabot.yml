@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    ignore:
+      # eframe 0.30 and later replace App::update with App::ui and rename egui types.
+      # Held until the GUI is migrated.
+      - dependency-name: "eframe"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     groups:
       cargo:
         patterns:
