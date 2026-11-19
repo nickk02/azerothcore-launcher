@@ -31,13 +31,26 @@ is online, remembers your account name, and starts the game.
 
 Download `AzerothCore.dmg` from [Releases](../../releases) and drag the app to
 Applications. The app is not notarized, so on first launch right-click it and
-choose **Open**. It needs macOS 11 or later.
+choose **Open**. It needs macOS 14 or later and runs on Apple silicon and Intel.
 
-The 3.3.5a client is a Windows program, so the Mac app starts it through
-Wine. Install Wine (for example `brew install --cask --no-quarantine wine-stable`)
-or CrossOver first. Pick `Wow.exe` with **Browse**. The app does not type your
-login into the game; it only remembers it in the Keychain and fills its own
-fields.
+The 3.3.5a client is a Windows program, so the Mac app starts it through Wine.
+Install one of these first:
+
+```
+brew tap gcenx/wine
+brew install --cask gcenx/wine/wine-stable
+```
+
+CrossOver, Whisky and Sikarugir also work. The app finds the one you have
+installed. The `wine-stable` cask in the main Homebrew repository is disabled,
+and Homebrew no longer accepts `--no-quarantine`, so use the Gcenx cask above.
+
+Click **Browse** and pick `Wow.exe`. On the first Play the app creates its own
+Wine prefix in `~/Library/Application Support/AzerothCore/prefix` (about a
+minute), writes the realmlist, and starts the game. It never touches `~/.wine`.
+If no Wine is installed, the window says what to install. The app does not type
+your login into the game. It keeps it in the Keychain if you tick **Remember
+me**.
 
 ## Set your server's realmlist
 
@@ -91,9 +104,11 @@ checksum for the file if you want to check it yourself.
 
 # For developers
 
-The launcher is one Rust crate for Windows and macOS. `src/lib.rs` holds the
-logic (settings, realm check, realmlist, launch, updates, credentials) and
-`src/main.rs` holds the window, built with egui.
+The launcher has three parts. `core/` is a Rust library with no UI: settings,
+realm check, tunnel proxy, realmlist, Wine setup, launch, updates and
+credentials. `src/main.rs` is the Windows window, built with egui. `macos/` is
+the Mac window, built with SwiftUI. It calls `core/` through UniFFI bindings
+that `scripts/build-macos.sh` generates.
 
 ## Build and test
 

@@ -10,6 +10,14 @@ name = "launcher_core"
 path = "src/lib.rs"
 crate-type = ["lib", "staticlib", "cdylib"]
 
+[features]
+cli = ["uniffi/cli"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["cli"]
+
 [dependencies]
 uniffi = "0.32"
 ureq = "3"
