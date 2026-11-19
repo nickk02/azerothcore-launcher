@@ -1,3 +1,8 @@
 /target/
 /dist/
 /installer/dist/
+/macos/.build/
+/macos/build/
+/macos/Sources/AzerothCore/Generated/
+/macos/Sources/LauncherCoreFFI/include/*
+!/macos/Sources/LauncherCoreFFI/include/.gitkeep
