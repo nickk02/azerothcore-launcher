@@ -5,7 +5,8 @@
 //! centred on the page, and a 372 px field column on the right.
 
 use eframe::egui::{self, Color32, FontData, FontDefinitions, FontFamily, FontId, RichText};
-use launcher_core::{autofill, config::Config, creds, play, realm::{self, Reachability}, tunnel::{self, Tunnel}, update};
+use launcher_core::{autofill, config::{self, Config}, creds, play, realm::{self, Reachability}, session::Session, update};
+use std::sync::Arc;
 use std::path::Path;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
@@ -36,7 +37,7 @@ fn progress(t: f32, delay: f32, dur: f32) -> f32 { ((t - delay) / dur).clamp(0.0
 /// Art the player supplied: `<config dir>/AzerothCore/art/<name>.png`, used instead of the bundled
 /// image when it decodes. The repository ships only original art; this lets a player use their own.
 fn art(name: &str, bundled: &[u8]) -> Vec<u8> {
-    let path = dirs::config_dir().unwrap_or_default().join("AzerothCore").join("art").join(format!("{name}.png"));
+    let path = config::art_dir().join(format!("{name}.png"));
     match std::fs::read(path) {
         Ok(bytes) if image::load_from_memory(&bytes).is_ok() => bytes,
         _ => bundled.to_vec(),
@@ -184,8 +185,8 @@ struct App {
     checked_realm: Option<String>,
     content_h: f32,
     loading: bool,
-    /// Local proxy for gateway (wss://) realms; lives as long as the launcher.
-    tunnel: Option<(String, Tunnel)>,
+    /// Starts the game and owns the local proxy for gateway (wss://) realms.
+    session: Arc<Session>,
 }
 
 impl App {
@@ -218,7 +219,7 @@ impl App {
             checked_realm: None,
             content_h: 560.0,
             loading: false,
-            tunnel: None,
+            session: Arc::new(Session::new()),
         }
     }
 
@@ -246,30 +247,15 @@ impl App {
             let _ = creds::store(&self.account, &self.password);
         }
         self.save();
-        let mut cfg_realm = self.realm.trim().to_string();
-        // A gateway address (wss://...) is reached through a local proxy, so the game
-        // is pointed at 127.0.0.1 and the proxy carries it the rest of the way.
-        if let Some(base) = tunnel::gateway_url(&cfg_realm) {
-            if self.tunnel.as_ref().map(|(b, _)| b != &base).unwrap_or(true) {
-                self.tunnel = None; // free the ports before rebinding
-                match Tunnel::start(&base) {
-                    Ok(t) => self.tunnel = Some((base, t)),
-                    Err(_) => {
-                        self.error = "Could not start the local connection. Ports 3724, 8085 and 8086 must be free.".into();
-                        return;
-                    }
-                }
-            }
-            cfg_realm = tunnel::LOCAL_ADDRESS.to_string();
-        }
+        let cfg_realm = self.realm.trim().to_string();
         // Starting the game can take a minute on a Mac the first time (Wine builds its
         // prefix), so it runs off the UI thread.
         self.error.clear();
         self.loading = true;
         self.realm_status = if play::prefix_ready() { "Starting WoW...".into() } else { "Setting up Wine, first run takes about a minute...".into() };
         let (tx, rx) = channel();
-        let (path, realm) = (self.wow_path.clone(), cfg_realm);
-        std::thread::spawn(move || { let _ = tx.send(play::launch(&path, &realm)); });
+        let (path, realm, session) = (self.wow_path.clone(), cfg_realm, self.session.clone());
+        std::thread::spawn(move || { let _ = tx.send(session.play(&path, &realm)); });
         self.launch_rx = Some(rx);
     }
 

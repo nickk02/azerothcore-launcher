@@ -6,3 +6,7 @@ pub mod play;
 pub mod realm;
 pub mod tunnel;
 pub mod update;
+pub mod session;
+pub mod ffi;
+
+uniffi::setup_scaffolding!();

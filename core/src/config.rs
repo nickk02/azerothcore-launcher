@@ -9,6 +9,11 @@ pub struct Config {
     pub remember_login: bool,
 }
 
+/// Where a player can drop `hero.png`, `logo.png` and `icon.png` to replace the bundled art.
+pub fn art_dir() -> PathBuf {
+    dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("AzerothCore").join("art")
+}
+
 impl Config {
     pub fn path() -> PathBuf {
         // %APPDATA%\AzerothCore on Windows, ~/Library/Application Support/AzerothCore on macOS.
