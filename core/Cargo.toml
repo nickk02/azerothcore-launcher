@@ -8,9 +8,10 @@ license = "MIT"
 [lib]
 name = "launcher_core"
 path = "src/lib.rs"
-crate-type = ["lib", "staticlib"]
+crate-type = ["lib", "staticlib", "cdylib"]
 
 [dependencies]
+uniffi = "0.32"
 ureq = "3"
 gateway = { package = "azerothcore-gateway", path = "../gateway" }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "io-util"] }
