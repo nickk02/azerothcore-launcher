@@ -39,9 +39,13 @@ or CrossOver first. Pick `Wow.exe` with **Browse**. The app does not type your
 login into the game; it only remembers it in the Keychain and fills its own
 fields.
 
+## Choosing a realm
+
+The **Realm** menu lists `azerothcore.net`, which is the default. Choose **Custom** to type another realm address, for example your own server.
+
 ## Set your server's realmlist
 
-Type the realm address into **Realm address**. Use the same text you would put
+Choose **Custom** in the **Realm** menu and type the realm address. Use the same text you would put
 after `set realmlist` in `WTF\realmlist.wtf`, for example `logon.example.com`
 or `192.168.1.100`. The launcher checks port 3724 for the status line. If your
 server's login port is different, add it as `host:port`.

@@ -157,12 +157,17 @@ fn field<'t>(text: &'t mut String, hint: &str, password: bool) -> egui::TextEdit
         .desired_width(f32::INFINITY)
 }
 
+/// The project's own realm, offered as a preset in the realm menu.
+const PRESET_REALM: &str = "wss://play.azerothcore.net";
+
 struct App {
     hero: egui::TextureHandle,
     logo: egui::TextureHandle,
     started: Instant,
     wow_path: String,
     realm: String,
+    /// True when the realm menu is on "Custom" and the address is typed by hand.
+    custom_realm: bool,
     account: String,
     password: String,
     remember: bool,
@@ -194,7 +199,8 @@ impl App {
             logo: load_texture(ctx, "logo", &art("logo", LOGO), None),
             started: Instant::now(),
             wow_path: cfg.wow_path,
-            realm: cfg.realm_address,
+            custom_realm: !cfg.realm_address.trim().is_empty() && cfg.realm_address.trim() != PRESET_REALM,
+            realm: if cfg.realm_address.trim().is_empty() { PRESET_REALM.to_string() } else { cfg.realm_address },
             account,
             password: String::new(),
             remember: cfg.remember_login,
@@ -453,10 +459,30 @@ impl eframe::App for App {
             });
             child.add_space(10.0);
 
-            field_label(&mut child, "REALM ADDRESS");
-            if child.add(field(&mut self.realm, "e.g. 192.168.1.100", false)).changed() {
+            field_label(&mut child, "REALM");
+            let before = self.custom_realm;
+            egui::ComboBox::from_id_salt("realm_menu")
+                .width(w)
+                .selected_text(if self.custom_realm { "Custom" } else { "azerothcore.net" })
+                .show_ui(&mut child, |ui| {
+                    ui.selectable_value(&mut self.custom_realm, false, "azerothcore.net");
+                    ui.selectable_value(&mut self.custom_realm, true, "Custom");
+                });
+            if self.custom_realm != before {
+                if self.custom_realm {
+                    if self.realm == PRESET_REALM { self.realm.clear(); }
+                } else {
+                    self.realm = PRESET_REALM.to_string();
+                }
                 self.last_edit = Instant::now();
                 self.save();
+            }
+            if self.custom_realm {
+                child.add_space(8.0);
+                if child.add(field(&mut self.realm, "e.g. 192.168.1.100", false)).changed() {
+                    self.last_edit = Instant::now();
+                    self.save();
+                }
             }
             self.content_h = child.cursor().top() - start_y;
         });
