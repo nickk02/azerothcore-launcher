@@ -28,7 +28,7 @@ struct ContentView: View {
                     if model.customRealm {
                         TextField("Address", text: $model.realm, prompt: Text("logon.example.com or wss://play.example.com"))
                             .autocorrectionDisabled()
-                            .onSubmit { model.save() }
+                            .onChange(of: model.realm) { model.save() }
                     }
                     LabeledContent("Status") {
                         Label(model.status.text, systemImage: "circle.fill")
@@ -39,6 +39,7 @@ struct ContentView: View {
                     TextField("Name", text: $model.account).autocorrectionDisabled()
                     SecureField("Password", text: $model.password)
                     Toggle("Remember me", isOn: $model.remember)
+                        .onChange(of: model.remember) { model.rememberChanged() }
                 }
                 Section("Game") {
                     LabeledContent("Wow.exe") {
@@ -75,6 +76,7 @@ struct ContentView: View {
         .fileImporter(isPresented: $choosing, allowedContentTypes: [UTType(filenameExtension: "exe") ?? .data]) { result in
             if case .success(let url) = result { model.choose(url) }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in model.refreshWine() }
         .alert("AzerothCore is up to date", isPresented: $model.upToDateNotice) { Button("OK") {} } message: { Text("Version \(model.version)") }
         .task(id: model.realm) {
             try? await Task.sleep(for: .milliseconds(400))

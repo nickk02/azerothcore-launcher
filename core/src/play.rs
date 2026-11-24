@@ -89,7 +89,8 @@ pub fn prefix_dir() -> PathBuf {
 
 #[cfg(not(windows))]
 pub fn prefix_ready() -> bool {
-    prefix_dir().join("system.reg").is_file()
+    let dir = prefix_dir();
+    dir.join("system.reg").is_file() && dir.join("user.reg").is_file()
 }
 
 /// Windows needs no prefix.
@@ -135,7 +136,7 @@ pub fn setup_prefix(engine: &Engine) -> Result<(), String> {
     }
     // wineboot can exit before wineserver has written the registry, so wait for it.
     let wait = Instant::now();
-    while !(prefix_ready() && dir.join("user.reg").is_file()) && wait.elapsed() < Duration::from_secs(60) {
+    while !prefix_ready() && wait.elapsed() < Duration::from_secs(60) {
         std::thread::sleep(Duration::from_millis(250));
     }
     if prefix_ready() { Ok(()) } else { Err(format!("{} did not create a prefix at {}. Run it from Terminal to see why.", engine.name, dir.display())) }

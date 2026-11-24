@@ -56,6 +56,7 @@ final class LauncherModel {
         remember = s.rememberLogin
         // Only the account name is filled in. The password never goes into a visible control.
         if remember, let login = savedLogin() { account = login.account }
+        if let icon = Art.image("icon", maxPixel: 512) { NSApplication.shared.applicationIconImage = icon }
         refreshWine()
         Task { await checkForUpdate(manual: false) }
     }
@@ -67,6 +68,12 @@ final class LauncherModel {
         } else {
             realm = presetRealm
         }
+        save()
+    }
+
+    /// Unchecking "Remember me" removes the saved login right away and keeps the choice.
+    func rememberChanged() {
+        if !remember { clearLogin() }
         save()
     }
 
