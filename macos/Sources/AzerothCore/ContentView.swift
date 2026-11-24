@@ -20,8 +20,16 @@ struct ContentView: View {
                     }
                 }
                 Section("Realm") {
-                    TextField("Address", text: $model.realm, prompt: Text("logon.example.com or wss://play.example.com"))
-                        .autocorrectionDisabled()
+                    Picker("Realm", selection: $model.customRealm) {
+                        Text("azerothcore.net").tag(false)
+                        Text("Custom").tag(true)
+                    }
+                    .onChange(of: model.customRealm) { model.realmMenuChanged() }
+                    if model.customRealm {
+                        TextField("Address", text: $model.realm, prompt: Text("logon.example.com or wss://play.example.com"))
+                            .autocorrectionDisabled()
+                            .onSubmit { model.save() }
+                    }
                     LabeledContent("Status") {
                         Label(model.status.text, systemImage: "circle.fill")
                             .foregroundStyle(Color(nsColor: model.status.color))

@@ -41,7 +41,7 @@ rm -rf dist
 APP="dist/AzerothCore.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$MAC/.build/apple/Products/Release/AzerothCore" "$APP/Contents/MacOS/AzerothCore"
-cp "$MAC"/Resources/hero.png "$MAC"/Resources/logo.png "$APP/Contents/Resources/"
+cp assets/hero.png assets/logo.png "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -64,8 +64,8 @@ PLIST
 ICONSET="dist/icon.iconset"
 mkdir -p "$ICONSET"
 for size in 16 32 128 256 512; do
-  sips -z $size $size "$MAC/Resources/icon.png" --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
-  sips -z $((size*2)) $((size*2)) "$MAC/Resources/icon.png" --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+  sips -z $size $size assets/icon.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+  sips -z $((size*2)) $((size*2)) assets/icon.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/icon.icns"
 rm -rf "$ICONSET"

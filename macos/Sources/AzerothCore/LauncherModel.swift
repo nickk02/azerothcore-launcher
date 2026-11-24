@@ -21,11 +21,16 @@ enum Status {
     }
 }
 
+/// The project's own realm, offered as a preset in the realm menu.
+let presetRealm = "wss://play.azerothcore.net"
+
 @MainActor
 @Observable
 final class LauncherModel {
     var wowPath = ""
     var realm = ""
+    /// True when the realm menu is on "Custom" and the address is typed by hand.
+    var customRealm = false
     var account = ""
     var password = ""
     var remember = false
@@ -45,12 +50,24 @@ final class LauncherModel {
     func start() {
         let s = loadSettings()
         wowPath = s.wowPath
-        realm = s.realmAddress
+        let saved = s.realmAddress.trimmingCharacters(in: .whitespaces)
+        customRealm = !saved.isEmpty && saved != presetRealm
+        realm = saved.isEmpty ? presetRealm : s.realmAddress
         remember = s.rememberLogin
         // Only the account name is filled in. The password never goes into a visible control.
         if remember, let login = savedLogin() { account = login.account }
         refreshWine()
         Task { await checkForUpdate(manual: false) }
+    }
+
+    /// Called when the realm menu changes. Matches the Windows launcher: switching to Custom clears the preset, switching back restores it.
+    func realmMenuChanged() {
+        if customRealm {
+            if realm == presetRealm { realm = "" }
+        } else {
+            realm = presetRealm
+        }
+        save()
     }
 
     func refreshWine() {
