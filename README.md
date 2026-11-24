@@ -41,8 +41,9 @@ brew tap gcenx/wine
 brew install --cask gcenx/wine/wine-stable
 ```
 
-CrossOver, Whisky and Sikarugir also work. The app finds the one you have
-installed. The `wine-stable` cask in the main Homebrew repository is disabled,
+Whisky and Sikarugir also work. The app finds the one you have installed.
+CrossOver is not supported yet, because its `wine` command needs a CrossOver
+bottle and cannot use the launcher's own prefix. The `wine-stable` cask in the main Homebrew repository is disabled,
 and Homebrew no longer accepts `--no-quarantine`, so use the Gcenx cask above.
 
 Click **Browse** and pick `Wow.exe`. On the first Play the app creates its own

@@ -32,10 +32,10 @@ pub struct Engine {
 }
 
 #[cfg(not(windows))]
-pub const NO_WINE_MESSAGE: &str = "Wine was not found. Install it with: brew tap gcenx/wine && brew install --cask gcenx/wine/wine-stable. CrossOver, Whisky and Sikarugir also work. Then click Play again.";
+pub const NO_WINE_MESSAGE: &str = "Wine was not found. Install it with: brew tap gcenx/wine && brew install --cask gcenx/wine/wine-stable. Whisky and Sikarugir also work. Then click Play again.";
 
-/// Known Wine locations, best first. A Wine from Homebrew or a Gcenx app comes
-/// before CrossOver, because CrossOver's own `wine` script wants a CrossOver bottle.
+/// Known Wine locations, best first. CrossOver is left out: its `wine` script wants a
+/// CrossOver bottle and ignores the launcher's own prefix.
 #[cfg(not(windows))]
 fn engine_candidates(home: &Path) -> Vec<Engine> {
     let app = |name: &'static str, rel: &str| Engine { name, bin: PathBuf::from(rel) };
@@ -52,7 +52,6 @@ fn engine_candidates(home: &Path) -> Vec<Engine> {
     }
     // Whisky keeps its Wine build in the user's library.
     v.push(Engine { name: "Whisky", bin: home.join("Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/bin/wine64") });
-    v.push(app("CrossOver", "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine"));
     v
 }
 
@@ -199,11 +198,11 @@ mod tests {
     #[test]
     fn picks_first_existing_engine() {
         let home = Path::new("/Users/x");
-        let have = |p: &Path| p == Path::new("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine") || p == Path::new("/Applications/Wine Stable.app/Contents/Resources/wine/bin/wine");
+        let have = |p: &Path| p == Path::new("/Applications/Wine Staging.app/Contents/Resources/wine/bin/wine") || p == Path::new("/Applications/Wine Stable.app/Contents/Resources/wine/bin/wine");
         let e = pick_engine(engine_candidates(home), have).unwrap();
         assert_eq!(e.name, "Wine (app)");
         let only_cx = |p: &Path| p.to_string_lossy().contains("CrossOver.app");
-        assert_eq!(pick_engine(engine_candidates(home), only_cx).unwrap().name, "CrossOver");
+        assert!(pick_engine(engine_candidates(home), only_cx).is_none());
         assert!(pick_engine(engine_candidates(home), |_| false).is_none());
     }
 }

@@ -439,7 +439,7 @@ impl eframe::App for App {
             let enter = pw.lost_focus() && child.input(|i| i.key_pressed(egui::Key::Enter));
             child.add_space(14.0);
 
-            if checkbox(&mut child, &mut self.remember, "Remember me") && !self.loading {
+            if checkbox(&mut child, &mut self.remember, "Remember me") {
                 if !self.remember { creds::clear(); }
                 self.save();
             }
