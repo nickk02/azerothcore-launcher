@@ -86,7 +86,7 @@ them.
 
 ## Your own artwork
 
-The launcher ships with original art. To use your own, put `hero.png`, `logo.png` and/or `icon.png` in `%APPDATA%\AzerothCorert` on Windows or `~/Library/Application Support/AzerothCore/art` on macOS, then restart the launcher. A file that is missing or is not a valid image is ignored.
+The launcher ships with the Wrath of the Lich King art. To use your own, put `hero.png`, `logo.png` and/or `icon.png` in `%APPDATA%\AzerothCore\art` on Windows or `~/Library/Application Support/AzerothCore/art` on macOS, then restart the launcher. A file that is missing or is not a valid image is ignored.
 
 ## If it will not start
 
@@ -205,8 +205,8 @@ them once more.
 
 ### Artwork
 
-`assets/` holds original art made for this project (hero, wordmark, icon). It
-is compiled into the executable.
+`assets/` holds the Wrath of the Lich King art (hero, wordmark, icon). It
+is compiled into the executable. Players can replace it with their own files.
 
 ## Continuous integration
 
