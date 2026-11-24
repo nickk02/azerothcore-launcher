@@ -5,7 +5,8 @@
 //! centred on the page, and a 372 px field column on the right.
 
 use eframe::egui::{self, Color32, FontData, FontDefinitions, FontFamily, FontId, RichText};
-use launcher_core::{autofill, config::Config, creds, play, realm::{self, Reachability}, tunnel::{self, Tunnel}, update};
+use launcher_core::{autofill, config::{self, Config}, creds, play, realm::{self, Reachability}, session::Session, update};
+use std::sync::Arc;
 use std::path::Path;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
@@ -36,7 +37,7 @@ fn progress(t: f32, delay: f32, dur: f32) -> f32 { ((t - delay) / dur).clamp(0.0
 /// Art the player supplied: `<config dir>/AzerothCore/art/<name>.png`, used instead of the bundled
 /// image when it decodes. The repository ships only original art; this lets a player use their own.
 fn art(name: &str, bundled: &[u8]) -> Vec<u8> {
-    let path = dirs::config_dir().unwrap_or_default().join("AzerothCore").join("art").join(format!("{name}.png"));
+    let path = config::art_dir().join(format!("{name}.png"));
     match std::fs::read(path) {
         Ok(bytes) if image::load_from_memory(&bytes).is_ok() => bytes,
         _ => bundled.to_vec(),
@@ -179,12 +180,13 @@ struct App {
     status_rx: Option<Receiver<(String, Reachability)>>,
     install_rx: Option<Receiver<Result<(), String>>>,
     autofill_rx: Option<Receiver<bool>>,
+    launch_rx: Option<Receiver<Result<(), String>>>,
     last_edit: Instant,
     checked_realm: Option<String>,
     content_h: f32,
     loading: bool,
-    /// Local proxy for gateway (wss://) realms; lives as long as the launcher.
-    tunnel: Option<(String, Tunnel)>,
+    /// Starts the game and owns the local proxy for gateway (wss://) realms.
+    session: Arc<Session>,
 }
 
 impl App {
@@ -212,11 +214,12 @@ impl App {
             status_rx: None,
             install_rx: None,
             autofill_rx: None,
+            launch_rx: None,
             last_edit: Instant::now() - Duration::from_secs(1),
             checked_realm: None,
             content_h: 560.0,
             loading: false,
-            tunnel: None,
+            session: Arc::new(Session::new()),
         }
     }
 
@@ -244,35 +247,27 @@ impl App {
             let _ = creds::store(&self.account, &self.password);
         }
         self.save();
-        let mut cfg_realm = self.realm.trim().to_string();
-        // A gateway address (wss://...) is reached through a local proxy, so the game
-        // is pointed at 127.0.0.1 and the proxy carries it the rest of the way.
-        if let Some(base) = tunnel::gateway_url(&cfg_realm) {
-            if self.tunnel.as_ref().map(|(b, _)| b != &base).unwrap_or(true) {
-                self.tunnel = None; // free the ports before rebinding
-                match Tunnel::start(&base) {
-                    Ok(t) => self.tunnel = Some((base, t)),
-                    Err(_) => {
-                        self.error = "Could not start the local connection. Ports 3724, 8085 and 8086 must be free.".into();
-                        return;
-                    }
-                }
-            }
-            cfg_realm = tunnel::LOCAL_ADDRESS.to_string();
-        }
-        if let Err(e) = play::launch(&self.wow_path, &cfg_realm) {
-            self.error = e;
-            return;
-        }
-        // Windows types the login into the game's login screen. Prefer what was just typed.
-        if cfg!(windows) {
-            let login = if !self.password.is_empty() { Some((self.account.clone(), self.password.clone())) }
-                else if self.remember { creds::get() } else { None };
-            if let Some((account, password)) = login {
-                let (tx, rx) = channel();
-                std::thread::spawn(move || { let _ = tx.send(autofill::type_login(&account, &password)); });
-                self.autofill_rx = Some(rx);
-            }
+        let cfg_realm = self.realm.trim().to_string();
+        // Starting the game can take a minute on a Mac the first time (Wine builds its
+        // prefix), so it runs off the UI thread.
+        self.error.clear();
+        self.loading = true;
+        self.realm_status = if play::prefix_ready() { "Starting WoW...".into() } else { "Setting up Wine, first run takes about a minute...".into() };
+        let (tx, rx) = channel();
+        let (path, realm, session) = (self.wow_path.clone(), cfg_realm, self.session.clone());
+        std::thread::spawn(move || { let _ = tx.send(session.play(&path, &realm)); });
+        self.launch_rx = Some(rx);
+    }
+
+    /// Windows types the login into the game's login screen. Prefer what was just typed.
+    fn start_autofill(&mut self) {
+        if !cfg!(windows) { return; }
+        let login = if !self.password.is_empty() { Some((self.account.clone(), self.password.clone())) }
+            else if self.remember { creds::get() } else { None };
+        if let Some((account, password)) = login {
+            let (tx, rx) = channel();
+            std::thread::spawn(move || { let _ = tx.send(autofill::type_login(&account, &password)); });
+            self.autofill_rx = Some(rx);
         }
     }
 
@@ -302,6 +297,17 @@ impl App {
                         self.version_text = format!("AzerothCore v{} (update v{} {})", update::CURRENT_VERSION, self.update.latest, why);
                         self.update.available = false;
                     }
+                }
+            }
+        }
+        if let Some(rx) = &self.launch_rx {
+            if let Ok(result) = rx.try_recv() {
+                self.launch_rx = None;
+                self.loading = false;
+                self.checked_realm = None; // refresh the status line
+                match result {
+                    Ok(()) => self.start_autofill(),
+                    Err(e) => self.error = e,
                 }
             }
         }
@@ -433,13 +439,13 @@ impl eframe::App for App {
             let enter = pw.lost_focus() && child.input(|i| i.key_pressed(egui::Key::Enter));
             child.add_space(14.0);
 
-            if checkbox(&mut child, &mut self.remember, "Remember me") && !self.loading {
+            if checkbox(&mut child, &mut self.remember, "Remember me") {
                 if !self.remember { creds::clear(); }
                 self.save();
             }
             child.add_space(14.0);
 
-            if button(&mut child, "Play", semibold(18.0), egui::vec2(w, 50.0), &PLAY).clicked() || enter {
+            if (button(&mut child, "Play", semibold(18.0), egui::vec2(w, 50.0), &PLAY).clicked() || enter) && !self.loading {
                 self.play();
             }
             if !self.error.is_empty() {

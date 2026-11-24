@@ -1,21 +1,47 @@
 #!/bin/bash
-# Builds a universal AzerothCore.app and AzerothCore.dmg (plus a .sha256) into ./dist.
-# Usage: scripts/build-macos.sh [version]   (run from anywhere; needs Rust and Xcode tools)
+# Builds a universal AzerothCore.app (SwiftUI over the Rust core) and AzerothCore.dmg,
+# plus a .sha256, into ./dist.
+# Usage: scripts/build-macos.sh [version]   (run from anywhere; needs Rust, Xcode and rustup)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION="${1:-0.0.0}"
+ROOT="$PWD"
+MAC="$ROOT/macos"
 
-rustup target add aarch64-apple-darwin x86_64-apple-darwin
+# Use the newest Xcode installed unless the caller already chose one.
+if [ -z "${DEVELOPER_DIR:-}" ]; then
+  newest=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)
+  [ -n "$newest" ] && export DEVELOPER_DIR="$newest/Contents/Developer"
+fi
+
 export AC_VERSION="$VERSION"
-cargo build --release --target aarch64-apple-darwin
-cargo build --release --target x86_64-apple-darwin
+export MACOSX_DEPLOYMENT_TARGET=14.0
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+for t in aarch64-apple-darwin x86_64-apple-darwin; do
+  cargo build -p azerothcore-core --release --target "$t"
+done
+
+# One universal static library for the Swift package to link.
+rm -rf "$MAC/build" "$MAC/Sources/AzerothCore/Generated"
+mkdir -p "$MAC/build/lib" "$MAC/Sources/AzerothCore/Generated"
+lipo -create -output "$MAC/build/lib/liblauncher_core.a" \
+  target/aarch64-apple-darwin/release/liblauncher_core.a \
+  target/x86_64-apple-darwin/release/liblauncher_core.a
+
+# Swift bindings. The generator reads the API from the library, so the host build is enough.
+cargo run -q -p azerothcore-core --features cli --bin uniffi-bindgen -- generate \
+  --library target/aarch64-apple-darwin/release/liblauncher_core.dylib \
+  --language swift --out-dir "$MAC/build/gen"
+cp "$MAC/build/gen/launcher_core.swift" "$MAC/Sources/AzerothCore/Generated/"
+cp "$MAC/build/gen/launcher_coreFFI.h" "$MAC/Sources/LauncherCoreFFI/include/"
+
+(cd "$MAC" && swift build -c release --arch arm64 --arch x86_64)
 
 rm -rf dist
 APP="dist/AzerothCore.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-lipo -create -output "$APP/Contents/MacOS/AzerothCore" \
-  target/aarch64-apple-darwin/release/azerothcore \
-  target/x86_64-apple-darwin/release/azerothcore
+cp "$MAC/.build/apple/Products/Release/AzerothCore" "$APP/Contents/MacOS/AzerothCore"
+cp assets/hero.png assets/logo.png "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -29,8 +55,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
-  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>LSApplicationCategoryType</key><string>public.app-category.games</string>
 </dict></plist>
 PLIST
 
